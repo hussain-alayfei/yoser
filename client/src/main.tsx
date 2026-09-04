@@ -10,8 +10,11 @@ import "./index.css";
 // Core visual tokens and flattening layer.
 import "./design.css";
 // Final product-quality overrides: accessibility, navigation clarity and a
-// quieter public-service visual language. Keep this import last.
+// quieter public-service visual language.
 import "./product-polish.css";
+// Responsive hardening must stay last. It resolves cascade regressions where
+// late desktop overrides otherwise win over earlier mobile media queries.
+import "./responsive.css";
 
 const queryClient = new QueryClient();
 
