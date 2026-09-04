@@ -14,9 +14,10 @@ import "./design.css";
 import "./product-polish.css";
 // Responsive hardening resolves broad layout regressions first.
 import "./responsive.css";
-// iPhone/mobile finishing layer must remain last so the tab bar, safe areas and
-// touch/overflow rules cannot be recolored by desktop navigation styles.
+// iPhone/mobile finishing layer keeps tab bars, safe areas and touch targets stable.
 import "./mobile-ios.css";
+// Dedicated WebGL digital-twin workspace styles are tightly scoped and load last.
+import "./digital-twin-3d.css";
 
 const queryClient = new QueryClient();
 
