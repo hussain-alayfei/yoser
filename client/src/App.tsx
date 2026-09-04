@@ -17,9 +17,10 @@ import { LoginPage } from "./pages/Login";
 import { OnboardingPage } from "./pages/Onboarding";
 import { JourneyStartPage, HomePage, ProfilePage, ProgramsPage, ApplicationPage, RequirementsPage, NotificationsPage, UnitPage, MaintenancePage, MaintenanceDetailPage, NewMaintenancePage } from "./pages/BeneficiaryPages";
 import { StaffPage } from "./pages/Staff";
-import { AssociationPage, AssociationCasePage } from "./pages/Association";
+import { AssociationCasePage } from "./pages/Association";
+import { AssociationWorkspacePage } from "./pages/AssociationWorkspace";
+
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return <Switch>
     <Route path="/" component={OnboardingPage} />
     <Route path="/onboarding" component={OnboardingPage} />
@@ -36,12 +37,21 @@ function Router() {
     <Route path="/unit/maintenance/new" component={NewMaintenancePage} />
     <Route path="/unit/maintenance/:id" component={MaintenanceDetailPage} />
     <Route path="/staff" component={StaffPage} />
-    <Route path="/association" component={AssociationPage} />
+
+    {/* Association navigation uses real routes rather than query-only pseudo pages. */}
     <Route path="/association/cases/:id" component={AssociationCasePage} />
+    <Route path="/association/cases" component={AssociationWorkspacePage} />
+    <Route path="/association/needs" component={AssociationWorkspacePage} />
+    <Route path="/association/delayed" component={AssociationWorkspacePage} />
+    <Route path="/association/ready" component={AssociationWorkspacePage} />
+    <Route path="/association" component={AssociationWorkspacePage} />
+
     <Route component={HomePage} />
   </Switch>;
 }
 
-function App() { return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster richColors position="top-center" dir="rtl" /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>; }
+function App() {
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster richColors position="top-center" dir="rtl" /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
+}
 
 export default App;
