@@ -1,6 +1,6 @@
 /** أسلوب خريطة الاستقرار: صفحات المستفيد تجعل المرحلة والخطوة التالية محور المحتوى، مع لوحات RTL نظيفة ومتدرجة. */
 import { AlertTriangle, ArrowLeft, Bell, Building2, CalendarClock, Check, CheckCircle2, ChevronLeft, CircleHelp, ClipboardList, Clock3, Compass, FileCheck2, FileText, Home, MapPin, PencilLine, Plus, Send, Sparkles, Upload, Wrench, X } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
@@ -8,8 +8,12 @@ import { ApplicationUpdateLog, JourneyTimeline } from "@/components/JourneyTimel
 import { MetricCard } from "@/components/MetricCard";
 import { StatusBadge, toneForStatus } from "@/components/StatusBadge";
 import { ConstructionTwin, UnitTwin } from "@/components/UnitTwin";
+import { AiBadge, AiDecisionNotice, AiFactors } from "@/components/AiInsight";
 import { beneficiary, fmtNumber, maintenanceRequests, notifications, programs, requirements, stages, unitComponents } from "@/data";
 import { getApplicationCreated, getJourneyAction, setApplicationCreated } from "@/journeyExperience";
+import { useNextStep, useProgramRecommendations } from "@/lib/ai";
+import { AI_DISCLAIMER, PROGRAM_TONE } from "@shared/ai";
+import type { NextStepRequest, NextStepResult, ProgramRecommendation, ProgramRecommendInput, ProgramRecommendResult } from "@shared/ai";
 
 function PrototypeNote() { return <div className="prototype-note-wrap"><p className="prototype-note"><CircleHelp size={15} />هذه النتائج إرشادية في النموذج الأولي، والقرار النهائي يعتمد على مراجعة الجهة المختصة.</p><details className="term-help"><summary>ما معنى المطابقة المبدئية؟</summary><p><strong>المطابقة المبدئية</strong> تقارن بيانات الأسرة والوضع السكني بالبرامج المحتملة. أما <strong>البحث الاجتماعي</strong> و<strong>التخصيص</strong> فهما مراحل مراجعة لاحقة لدى الجهة المختصة.</p></details></div>; }
 
@@ -18,6 +22,56 @@ function NextAction() {
     <div className="action-accent"><Upload size={22} /></div>
     <div className="next-action-copy"><p className="eyebrow">الخطوة التالية</p><h2>تحديث إثبات السكن</h2><p>هذا هو المتطلب الوحيد الذي يحتاج تحديثًا قبل استكمال مراجعة الطلب.</p><Link href="/requirements" className="action-link">رفع المستند <ArrowLeft size={15} /></Link></div>
     <div className="action-state"><span>آخر موعد</span><strong>24 أغسطس</strong></div>
+  </section>;
+}
+
+/**
+ * الميزة 3 — الخطوة التالية.
+ * تعرض قاعدة getJourneyAction فورًا، ثم تستبدلها بتحليل النموذج إن توفّر.
+ * حين لا يكون على المستفيد إجراء، تقول ذلك صراحة وتوضّح من ينتظره الطلب.
+ */
+function AiNextAction({ icon, eyebrow, context, handover = false, className = "" }: { icon: ReactNode; eyebrow: string; context: "journey" | "unit" | "maintenance"; handover?: boolean; className?: string }) {
+  const hasApplication = getApplicationCreated();
+  const selectedProgram = useMemo(() => { try { return sessionStorage.getItem("yusr-selected-program") || null; } catch { return null; } }, []);
+  const hasProfile = useMemo(() => { try { return Boolean(sessionStorage.getItem("sakan-profile")); } catch { return false; } }, []);
+
+  const rule = getJourneyAction({ hasProfile: hasProfile || hasApplication, selectedProgram: Boolean(selectedProgram) || hasApplication, hasApplication, context, handover });
+  const fallback = useMemo<NextStepResult>(() => ({
+    actionRequired: rule.key !== "await_review" && rule.key !== "construction_update",
+    title: rule.title,
+    description: rule.description,
+    href: rule.href as NextStepResult["href"],
+    label: rule.label,
+    waitingOn: rule.key === "await_review" || rule.key === "construction_update" ? "الجهة المختصة" : "المستفيد",
+    source: "rules",
+  }), [rule.key, rule.title, rule.description, rule.href, rule.label]);
+
+  const request = useMemo<NextStepRequest>(() => ({
+    stage: beneficiary.applicationStage,
+    stageNumber: beneficiary.applicationStageNumber,
+    totalStages: beneficiary.totalStages,
+    documents: requirements.map((item) => ({ name: item.name, status: item.status })),
+    lastAction: stages.filter((s) => s.status === "مكتمل").slice(-1)[0]?.title ?? "تقديم الطلب",
+    daysSinceUpdate: 12,
+    owner: handover ? "مقدم الخدمة" : "الجهة المختصة",
+    hasProfile: hasProfile || hasApplication,
+    selectedProgram,
+    hasApplication,
+    context,
+    handover,
+  }), [context, handover, hasApplication, hasProfile, selectedProgram]);
+
+  const { data, loading } = useNextStep(request, fallback);
+
+  return <section className={`unified-next-action ${className}`}>
+    <div className="unified-next-icon">{icon}</div>
+    <div className="unified-next-copy">
+      <p className="eyebrow">{eyebrow}<AiBadge source={data.source} loading={loading} /></p>
+      <h2>{data.title}</h2>
+      <p>{data.description}</p>
+      {!data.actionRequired && <p className="ai-waiting-on"><Clock3 size={14} />لا يلزمك إجراء الآن · الطلب لدى {data.waitingOn}</p>}
+    </div>
+    <Link className="primary-btn" href={data.href}>{data.label} <ArrowLeft size={16} /></Link>
   </section>;
 }
 
@@ -62,10 +116,37 @@ export function ProgramsPage() {
   const [selectedProgram, setSelectedProgram] = useState(() => { try { return sessionStorage.getItem("yusr-selected-program") ?? ""; } catch { return ""; } });
   const strongMatch = profile?.housing === "إيجار" && Number(profile?.income ?? 0) >= 3000;
   const visiblePrograms = programs.map((program) => program.name === "التملك المباشر" && !strongMatch ? { ...program, match: "يحتاج تحقق إضافي", tone: "warning", description: "تحتاج الحالة إلى تحقق إضافي بناءً على البيانات السكنية والدخل المدخلة." } : program);
+
+  // الميزة 1 — الترشيح الذكي. القواعد أعلاه هي القيمة الاحتياطية المعروضة فورًا.
+  const ruleRecommendations = useMemo<ProgramRecommendResult>(() => ({
+    recommendations: visiblePrograms.map((program) => ({
+      name: program.name,
+      suitability: (program.tone === "success" ? "ملاءمة مبدئية مرتفعة" : program.tone === "warning" ? "يحتاج تحقق إضافي" : "غير مناسب للحالة الحالية") as ProgramRecommendation["suitability"],
+      explanation: program.description,
+      factors: [],
+    })),
+    disclaimer: AI_DISCLAIMER,
+    source: "rules",
+  }), [visiblePrograms]);
+
+  const aiInput = useMemo<ProgramRecommendInput | null>(() => profile ? {
+    city: profile.city ?? beneficiary.city,
+    familyMembers: Number(profile.family ?? beneficiary.familyMembers) || beneficiary.familyMembers,
+    housingStatus: profile.housing ?? beneficiary.housingStatus,
+    monthlyIncome: Number(profile.income ?? beneficiary.monthlyIncome) || beneficiary.monthlyIncome,
+    monthlySupport: beneficiary.monthlySupport,
+    monthlyExpenses: beneficiary.monthlyExpenses,
+    socialResearchStatus: beneficiary.socialResearchStatus,
+    programs: programs.map((program) => ({ name: program.name, description: program.description })),
+  } : null, [profile]);
+
+  const { data: aiResult, loading: aiLoading } = useProgramRecommendations(aiInput, ruleRecommendations);
+  const cards = aiResult.recommendations.map((item) => ({ ...item, tone: PROGRAM_TONE[item.suitability] }));
   if (!profile) return <AppShell journeyStep={1} hideJourneyContinuation eyebrow="الخطوة 02 · معرفة الخيارات" title="أكمل بياناتك أولًا" subtitle="لا يمكن تقديم ترشيح واضح دون معرفة وضعك السكني الأساسي."><section className="journey-empty-state"><div className="journey-empty-symbol"><FileText size={25} /></div><div><p className="eyebrow">الخطوة السابقة غير مكتملة</p><h2>نحتاج بياناتك لعرض برامج مناسبة</h2><p>أكمل المدينة وحجم الأسرة والوضع السكني والدخل، ثم ستعود هنا تلقائيًا لرؤية الخيارات.</p></div><button className="primary-btn" onClick={() => navigate("/start")}>إكمال البيانات <ArrowLeft size={16} /></button></section></AppShell>;
   return <AppShell journeyStep={1} hideJourneyContinuation eyebrow="الخطوة 02 · معرفة الخيارات" title="البرامج التي قد تناسبك" subtitle={profile ? `النتيجة مبنية على بياناتك: ${profile.city} · ${profile.housing} · ${profile.family} أفراد` : "أكمل بياناتك أولًا لتحصل على مطابقة إرشادية أدق."}>
-    <div className="program-choice-head"><div><p className="eyebrow">اختر برنامجًا للمتابعة</p><h2>يمكنك مراجعة الخيارات قبل تقديم الطلب</h2></div><span>{selectedProgram ? "تم اختيار برنامج" : "لم تختر بعد"}</span></div>
-    <section className="program-list" role="radiogroup" aria-label="البرامج المرشحة">{visiblePrograms.map((program, i) => <article className={`program-card ${program.tone} ${selectedProgram === program.name ? "selected" : ""}`} key={program.name}><div className="program-index">0{i + 1}</div><div className="program-content"><div><p className="eyebrow">حل سكني محتمل</p><h2>{program.name}</h2></div><StatusBadge tone={program.tone as "success" | "warning" | "muted"}>{program.match}</StatusBadge><p>{program.description}</p><div className="program-card-actions"><button className="text-link" onClick={() => toast("ظهر هذا البرنامج بناءً على المدينة وحجم الأسرة والوضع السكني والدخل المدخل.")}>لماذا ظهر؟ <CircleHelp size={15} /></button><button className={`program-select ${selectedProgram === program.name ? "active" : ""}`} role="radio" aria-checked={selectedProgram === program.name} onClick={() => { setSelectedProgram(program.name); try { sessionStorage.setItem("yusr-selected-program", program.name); } catch { /* اختياري */ } }}>{selectedProgram === program.name ? <><Check size={15} /> تم الاختيار</> : "اختيار البرنامج"}</button></div></div></article>)}</section>
+    <div className="program-choice-head"><div><p className="eyebrow">اختر برنامجًا للمتابعة</p><h2>يمكنك مراجعة الخيارات قبل تقديم الطلب</h2></div><div className="program-choice-meta"><AiBadge source={aiResult.source} loading={aiLoading} /><span>{selectedProgram ? "تم اختيار برنامج" : "لم تختر بعد"}</span></div></div>
+    <AiDecisionNotice text={aiResult.disclaimer} />
+    <section className="program-list" role="radiogroup" aria-label="البرامج المرشحة">{cards.map((program, i) => <article className={`program-card ${program.tone} ${selectedProgram === program.name ? "selected" : ""}`} key={program.name}><div className="program-index">0{i + 1}</div><div className="program-content"><div><p className="eyebrow">حل سكني محتمل</p><h2>{program.name}</h2></div><StatusBadge tone={program.tone as "success" | "warning" | "muted"}>{program.suitability}</StatusBadge><p>{program.explanation}</p><AiFactors factors={program.factors} /><div className="program-card-actions"><button className="text-link" onClick={() => toast(program.factors.length ? `بُني هذا الترشيح على: ${program.factors.join("، ")}.` : "ظهر هذا البرنامج بناءً على المدينة وحجم الأسرة والوضع السكني والدخل المدخل.")}>لماذا ظهر؟ <CircleHelp size={15} /></button><button className={`program-select ${selectedProgram === program.name ? "active" : ""}`} role="radio" aria-checked={selectedProgram === program.name} onClick={() => { setSelectedProgram(program.name); try { sessionStorage.setItem("yusr-selected-program", program.name); } catch { /* اختياري */ } }}>{selectedProgram === program.name ? <><Check size={15} /> تم الاختيار</> : "اختيار البرنامج"}</button></div></div></article>)}</section>
     <section className="unified-next-action"><div className="unified-next-icon"><FileCheck2 size={21} /></div><div className="unified-next-copy"><p className="eyebrow">الخطوة التالية</p><h2>{selectedProgram ? `راجع طلب ${selectedProgram}` : "اختر برنامجًا للمتابعة"}</h2><p>{selectedProgram ? "سننقل اختيارك وبياناتك إلى ملخص واحد قبل التقديم النهائي." : "اختيارك هنا لا يرسل طلبًا؛ ستراجع كل البيانات في الصفحة التالية."}</p><div className="unified-next-meta"><Link href="/start">تعديل بياناتي</Link></div></div><button className="primary-btn" disabled={!selectedProgram} onClick={() => navigate("/application")}>مراجعة وتقديم الطلب <ArrowLeft size={17} /></button></section><PrototypeNote />
   </AppShell>;
 }
@@ -91,15 +172,14 @@ export function NotificationsPage() { const [showAll, setShowAll] = useState(tru
 export function UnitPage() {
   const [handover, setHandover] = useState(false);
   if (!getApplicationCreated()) return <AppShell journeyStep={0} hideJourneyContinuation eyebrow="مسكني" title="متابعة المسكن تبدأ بعد الطلب" subtitle="سيظهر التوأم الرقمي هنا عند تخصيص مسكن وربطه بطلبك."><section className="journey-empty-state"><div className="journey-empty-symbol"><Building2 size={26} /></div><div><p className="eyebrow">المسكن غير مرتبط بعد</p><h2>أكمل البيانات وقدّم طلبك أولًا</h2><p>بعد التخصيص ستتابع البناء دورًا بدور، ثم تنتقل إلى الاستلام والصيانة في نفس المساحة.</p></div><Link className="primary-btn" href="/start">بدء الرحلة <ArrowLeft size={16} /></Link></section></AppShell>;
-  const action = getJourneyAction({ hasProfile: true, selectedProgram: true, hasApplication: true, context: "unit", handover });
   return <AppShell journeyStep={handover ? 5 : 4} eyebrow={handover ? "المرحلة 06 · الاستلام" : "المرحلة 05 · متابعة البناء"} title="مسكني" subtitle={handover ? "تابع حالة الوحدة واحتياجات الصيانة بعد الاستلام." : "شاهد تقدم بناء مسكنك وما اكتمل في كل دور والخطوة التالية."}>
     <section className="unit-overview construction-overview"><div className="unit-facts"><p className="eyebrow">بيانات المسكن</p><h2>مشروع سكني في الرياض</h2><div><span><MapPin size={16} />حي النرجس</span><span><Building2 size={16} />دوران سكنيان</span><span><CalendarClock size={16} />التسليم المتوقع: ديسمبر 2026</span></div></div><div className="unit-overview-actions"><StatusBadge tone={handover ? "success" : "info"}>{handover ? "تم الاستلام" : "قيد البناء · 67%"}</StatusBadge><button className="unit-demo-toggle" onClick={() => setHandover((current) => !current)}>{handover ? "العودة لمتابعة البناء" : "محاكاة ما بعد التسليم"}</button></div></section>
-    <section className="unified-next-action unit-next-action"><div className="unified-next-icon">{handover ? <Wrench size={21} /> : <Bell size={21} />}</div><div className="unified-next-copy"><p className="eyebrow">خطوتك التالية</p><h2>{action.title}</h2><p>{action.description}</p></div><Link className="primary-btn" href={action.href}>{action.label} <ArrowLeft size={16} /></Link></section>
+    <AiNextAction icon={handover ? <Wrench size={21} /> : <Bell size={21} />} eyebrow="خطوتك التالية" context="unit" handover={handover} className="unit-next-action" />
     {!handover ? <ConstructionTwin /> : <><UnitTwin /><section className="maintenance-calendar"><div className="section-heading"><div><p className="eyebrow">جدول العناية</p><h2>المواعيد القادمة</h2></div><Link className="text-link" href="/unit/maintenance">سجل الصيانة <ChevronLeft size={16} /></Link></div><div className="calendar-rows"><div><span className="calendar-date"><strong>28</strong><small>أغسطس</small></span><div><strong>فحص التكييف الدوري</strong><p>موعد مقترح · لم يتم الحجز بعد</p></div><Link className="secondary-btn compact-btn" href="/unit/maintenance/new">حجز الموعد</Link></div><div><span className="calendar-date"><strong>15</strong><small>سبتمبر</small></span><div><strong>مراجعة تسربات المياه</strong><p>تذكير وقائي · مرتبط بالمطبخ</p></div><Link className="secondary-btn compact-btn" href="/unit/maintenance/MT-1024">عرض البلاغ</Link></div></div></section></>}
   </AppShell>;
 }
 
-export function MaintenancePage() { const action = getJourneyAction({ hasProfile: true, selectedProgram: true, hasApplication: true, context: "maintenance" }); return <AppShell journeyStep={6} eyebrow="المرحلة 07 · العناية بالمسكن" title="الصيانة والبلاغات" subtitle="تابع البلاغات الحالية وسجل أعمال الصيانة لوحدتك." actions={<Link className="primary-btn" href="/unit/maintenance/new"><Plus size={17} />بلاغ جديد</Link>}><section className="unified-next-action maintenance-next-action"><div className="unified-next-icon"><Wrench size={21} /></div><div className="unified-next-copy"><p className="eyebrow">الأولوية الآن</p><h2>{action.title}</h2><p>{action.description}</p></div><Link className="primary-btn" href={action.href}>{action.label} <ArrowLeft size={16} /></Link></section><section className="maintenance-summary"><div><span>بلاغات مفتوحة</span><strong>1</strong></div><div><span>تم حلها</span><strong>1</strong></div><div><span>وقت الاستجابة المتوقع</span><strong>48 ساعة</strong></div></section><section className="tickets-card"><div className="section-heading"><div><p className="eyebrow">سجل البلاغات</p><h2>طلبات الصيانة</h2></div></div>{maintenanceRequests.map((ticket) => <article className="ticket-row" key={ticket.id}><div className={`ticket-symbol ${ticket.tone}`}><Wrench size={19} /></div><div className="ticket-detail"><div><h3>{ticket.category} <span>#{ticket.id}</span></h3><StatusBadge tone={ticket.tone as "success" | "info"}>{ticket.status}</StatusBadge></div><p>{ticket.description}</p><small>{ticket.location} · {ticket.createdAt}</small></div><Link className="text-link" href={`/unit/maintenance/${ticket.id}`}>عرض التفاصيل <ChevronLeft size={16} /></Link></article>)}</section><section className="maintenance-flow"><div><CheckCircle2 size={17} /><span>تم الاستلام</span></div><i /><div className="active"><Clock3 size={17} /><span>قيد الإجراء</span></div><i /><div><Wrench size={17} /><span>تم إسناده</span></div><i /><div><CalendarClock size={17} /><span>موعد الصيانة</span></div><i /><div><Check size={17} /><span>تم الحل</span></div></section></AppShell>; }
+export function MaintenancePage() { return <AppShell journeyStep={6} eyebrow="المرحلة 07 · العناية بالمسكن" title="الصيانة والبلاغات" subtitle="تابع البلاغات الحالية وسجل أعمال الصيانة لوحدتك." actions={<Link className="primary-btn" href="/unit/maintenance/new"><Plus size={17} />بلاغ جديد</Link>}><AiNextAction icon={<Wrench size={21} />} eyebrow="الأولوية الآن" context="maintenance" className="maintenance-next-action" /><section className="maintenance-summary"><div><span>بلاغات مفتوحة</span><strong>1</strong></div><div><span>تم حلها</span><strong>1</strong></div><div><span>وقت الاستجابة المتوقع</span><strong>48 ساعة</strong></div></section><section className="tickets-card"><div className="section-heading"><div><p className="eyebrow">سجل البلاغات</p><h2>طلبات الصيانة</h2></div></div>{maintenanceRequests.map((ticket) => <article className="ticket-row" key={ticket.id}><div className={`ticket-symbol ${ticket.tone}`}><Wrench size={19} /></div><div className="ticket-detail"><div><h3>{ticket.category} <span>#{ticket.id}</span></h3><StatusBadge tone={ticket.tone as "success" | "info"}>{ticket.status}</StatusBadge></div><p>{ticket.description}</p><small>{ticket.location} · {ticket.createdAt}</small></div><Link className="text-link" href={`/unit/maintenance/${ticket.id}`}>عرض التفاصيل <ChevronLeft size={16} /></Link></article>)}</section><section className="maintenance-flow"><div><CheckCircle2 size={17} /><span>تم الاستلام</span></div><i /><div className="active"><Clock3 size={17} /><span>قيد الإجراء</span></div><i /><div><Wrench size={17} /><span>تم إسناده</span></div><i /><div><CalendarClock size={17} /><span>موعد الصيانة</span></div><i /><div><Check size={17} /><span>تم الحل</span></div></section></AppShell>; }
 
 export function NewMaintenancePage() {
   const [, navigate] = useLocation(); const [type, setType] = useState(""); const [location, setLocation] = useState(""); const [description, setDescription] = useState(""); const [fileName, setFileName] = useState(""); const [submitted, setSubmitted] = useState(false);

@@ -1,0 +1,165 @@
+/** أنماط مخرجات الذكاء الاصطناعي — تتبع نفس لغة «خريطة الاستقرار»: هدوء، حواف ناعمة، أخضر مؤسسي. */
+
+/* شارة مصدر النتيجة */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.ai-badge.ai { background: #eef6f3; color: #0b6c5d; border-color: #cbe4dc; }
+.ai-badge.rules { background: #f3f5f4; color: #6b7d78; border-color: #e0e7e4; }
+.ai-badge.loading { background: #fff6e6; color: #a66f17; border-color: #f0dcb8; }
+
+.ai-spin { animation: ai-spin 1s linear infinite; }
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ai-spin { animation: none; } }
+
+/* تنبيه: ترشيح وتفسير، لا قرار أهلية */
+.ai-decision-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 clamp(18px, 3.4vw, 48px) 16px;
+  padding: 11px 14px;
+  background: #f6faf8;
+  border: 1px solid #dbe9e4;
+  border-radius: 12px;
+  color: #46615a;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.ai-decision-notice svg { flex: none; margin-top: 2px; color: #0b6c5d; }
+
+/* عوامل الترشيح */
+.ai-factors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+.ai-factors li {
+  padding: 4px 10px;
+  background: #f2f7f5;
+  border: 1px solid #dfeae6;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #3f5a53;
+}
+
+/* سطر «لا يلزمك إجراء» داخل بطاقة الخطوة التالية */
+.ai-waiting-on {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 6px 11px;
+  background: #eef6f3;
+  border: 1px solid #cfe5dd;
+  border-radius: 9px;
+  color: #0b6c5d;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ai-waiting-on svg { flex: none; }
+
+/* لوحة الحالات المتوقفة */
+.stalled-panel {
+  margin: 0 clamp(18px, 3.4vw, 48px) 20px;
+  background: #fff;
+  border: 1px solid #dce9e4;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(12, 63, 55, .04);
+}
+.stalled-count {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: #fdf1e4;
+  color: #a4671a;
+  font-size: 18px;
+  font-weight: 900;
+}
+.stalled-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.stalled-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #e3ebe8;
+  background: #fbfdfc;
+  cursor: pointer;
+  transition: border-color .16s, box-shadow .16s, transform .16s;
+}
+.stalled-card:hover,
+.stalled-card:focus-visible {
+  border-color: #b6d6cc;
+  box-shadow: 0 10px 24px rgba(12, 63, 55, .07);
+  transform: translateY(-2px);
+  outline: none;
+}
+.stalled-card.urgent { border-inline-start: 4px solid #d0623f; }
+.stalled-card.watch { border-inline-start: 4px solid #d9a44a; }
+
+.stalled-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.stalled-card-head strong { display: block; font-size: 14px; color: #17403a; }
+.stalled-card-head small { display: block; margin-top: 3px; font-size: 10px; color: #71857f; }
+
+.stalled-summary { margin: 0; font-size: 12.5px; line-height: 1.75; color: #3f5a53; }
+
+.stalled-signals { list-style: none; padding: 0; margin: 0; display: grid; gap: 5px; }
+.stalled-signals li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  color: #6a7f79;
+  line-height: 1.6;
+}
+.stalled-signals svg { flex: none; margin-top: 2px; color: #c08327; }
+
+.stalled-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 2px 0 0;
+  padding: 9px 11px;
+  background: #f1f7f4;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0b6c5d;
+  line-height: 1.65;
+}
+.stalled-action svg { flex: none; margin-top: 1px; }
+
+.stalled-panel .ai-decision-notice { margin: 14px 0 0; }
+
+/* رأس اختيار البرامج */
+.program-choice-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 720px) {
+  .stalled-panel { margin: 0 12px 14px; padding: 14px; border-radius: 15px; }
+  .stalled-list { grid-template-columns: 1fr; }
+  .ai-decision-notice { margin: 0 12px 12px; }
+}

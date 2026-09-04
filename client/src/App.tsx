@@ -3,6 +3,7 @@ import "./sakan.css";
 import "./refinement.css";
 import "./upgrade.css";
 import "./journey-experience.css";
+import "./ai.css";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";

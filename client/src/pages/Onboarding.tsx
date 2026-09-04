@@ -3,7 +3,7 @@ import { ArrowLeft, Building2, CheckCircle2, FileText, Home, Sparkles } from "lu
 import { useState } from "react";
 import { useLocation } from "wouter";
 
-const logo = "/manus-storage/sakan360-logo_9d61e873.png";
+const logo = "/brand/yusr-logo.svg";
 
 const slides = [
   { eyebrow: "أهلًا بك في يسر", title: "رحلتك السكنية أوضح من أول خطوة", body: "يساعدك يسر على فهم وضعك السكني، معرفة البرامج المرشح لها، ثم متابعة طلبك والبيت بعد التسليم.", icon: Sparkles },

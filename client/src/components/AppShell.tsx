@@ -2,12 +2,12 @@
  * أسلوب خريطة الاستقرار: توجيه RTL واضح، مسار معلوماتي هادئ، وأخضر المسار كمرساة بصرية.
  */
 import { Bell, Building2, CheckCircle2, Clock3, Compass, FileText, Home, Lock, LogOut, Menu, ShieldAlert, Sparkles, UserRound, UsersRound } from "lucide-react";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { getApplicationCreated, getJourneyStep } from "@/journeyExperience";
 import { JourneyContinuation, JourneyNavigator } from "./JourneyNavigator";
 
-const logo = "/manus-storage/sakan360-logo_9d61e873.png";
+const logo = "/brand/yusr-logo.svg";
 
 const navItems = [
   { href: "/home", label: "مساري", icon: Compass },
@@ -20,6 +20,24 @@ const navItems = [
 const associationNavItems = [{ href: "/association", label: "الرئيسية", icon: Home }, { href: "/association?view=cases", label: "الطلبات", icon: FileText }, { href: "/association?view=needs", label: "تحتاج تدخل", icon: ShieldAlert }, { href: "/association?view=delayed", label: "الحالات المتأخرة", icon: Clock3 }, { href: "/association?view=ready", label: "الجاهزة للمراجعة", icon: CheckCircle2 }, { href: "/association?view=alerts", label: "التنبيهات", icon: Bell }];
 
 const fullNav = navItems;
+
+/**
+ * يطابق نقطة التوقف نفسها المستخدمة في CSS (‎760px‎) لا نقطة عامة،
+ * لأن القائمة الجانبية تخرج خارج الشاشة عند هذا الحد بالضبط.
+ */
+const DRAWER_QUERY = "(max-width: 760px)";
+
+function useIsDrawerLayout() {
+  const [isDrawer, setIsDrawer] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(DRAWER_QUERY);
+    const sync = () => setIsDrawer(mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+  return isDrawer;
+}
 
 function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; label: string; icon: typeof Home; mobile?: boolean }) {
   const [location] = useLocation();
@@ -34,13 +52,19 @@ function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; la
 
 export function AppShell({ children, eyebrow, title, subtitle, actions, variant = "beneficiary", journeyStep, hideJourneyContinuation = false }: { children: ReactNode; eyebrow?: string; title?: string; subtitle?: string; actions?: ReactNode; variant?: "beneficiary" | "association"; journeyStep?: number; hideJourneyContinuation?: boolean }) {
   const [open, setOpen] = useState(false);
+  const isDrawer = useIsDrawerLayout();
+  // القائمة المغلقة تبقى مرسومة خارج الشاشة، فلولا inert لظل قارئ الشاشة
+  // ومفتاح Tab يصلان إلى روابط غير مرئية.
+  const drawerHidden = isDrawer && !open;
   const [location, navigate] = useLocation();
+  // بدون هذا تبقى القائمة مفتوحة فوق الصفحة الجديدة بعد الضغط على أي رابط.
+  useEffect(() => { setOpen(false); }, [location]);
   const hasApplication = getApplicationCreated();
   const currentJourneyStep = journeyStep ?? getJourneyStep(location, hasApplication);
   const beneficiaryNavItems = hasApplication ? fullNav : fullNav.slice(0, 3);
   return (
     <div className={`app-shell ${variant === "association" ? "association-shell" : ""}`} dir="rtl">
-      <aside className={`sidebar ${open ? "is-open" : ""}`} aria-label="التنقل الرئيسي">
+      <aside id="app-sidebar" className={`sidebar ${open ? "is-open" : ""}`} aria-label="التنقل الرئيسي" inert={drawerHidden} aria-hidden={drawerHidden || undefined}>
         <div className="brand-lockup">
           <img src={logo} alt="شعار يسر" className="brand-mark" />
           <div><strong>يسر</strong><small>رحلتك السكنية في مكان واحد</small></div>
@@ -60,7 +84,7 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
       {open && <button className="sidebar-backdrop" aria-label="إغلاق القائمة" onClick={() => setOpen(false)} />}
       <main className="main-content">
         <header className="topbar">
-          <button className="menu-toggle" aria-label="فتح القائمة" onClick={() => setOpen(true)}><Menu size={22} /></button>
+          <button className="menu-toggle" aria-label={open ? "إغلاق القائمة" : "فتح القائمة"} aria-expanded={open} aria-controls="app-sidebar" onClick={() => setOpen(value => !value)}><Menu size={22} /></button>
           <div className="topbar-spacer" />
           <button className="topbar-bell" aria-label="الإشعارات" onClick={() => navigate("/notifications")}><Bell size={20} /><i /></button>
           <button className="profile-chip" onClick={() => navigate("/profile")}><span>أحمد</span><UserRound size={19} /></button>

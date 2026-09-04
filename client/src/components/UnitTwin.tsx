@@ -65,7 +65,7 @@ export function UnitTwin({ compact = false }: { compact?: boolean }) {
   const linkedTicket = selected.key === "plumbing" ? "MT-1024" : null;
   const nextStep = linkedTicket ? "متابعة إسناد البلاغ" : selected.issues === 0 ? "لا يوجد إجراء مطلوب" : "حجز فحص وقائي";
   return <section className={`unit-twin ${compact ? "compact" : ""}`}>
-    <div className="unit-visual" style={{ backgroundImage: "linear-gradient(90deg, rgba(245,247,246,.96), rgba(245,247,246,.33)), url('/manus-storage/sakan360-unit-twin_5abc1088.jpg')" }}>
+    <div className="unit-visual" style={{ backgroundImage: "linear-gradient(90deg, rgba(245,247,246,.96), rgba(245,247,246,.33)), linear-gradient(135deg, #cfe2db 0%, #9dc3b7 45%, #6f9d90 100%)" }}>
       <div className="unit-id"><span>وحدتي السكنية</span><strong>UNT-407</strong></div>
       <div className="unit-health"><i /><span>حالة الوحدة</span><strong>جيدة</strong></div>
     </div>

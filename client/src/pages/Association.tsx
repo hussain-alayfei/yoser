@@ -4,7 +4,10 @@ import { Link, useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge, toneForStatus } from "@/components/StatusBadge";
+import { AiBadge, AiDecisionNotice } from "@/components/AiInsight";
 import { associationCases, associationDemoThresholds, AssociationCase, stages } from "@/data";
+import { useStalledCases } from "@/lib/ai";
+import type { StalledCasesRequest, StalledCasesResult } from "@shared/ai";
 import { AlertTriangle, ArrowLeft, BellRing, Building2, CalendarDays, CheckCircle2, ChevronLeft, CircleHelp, ClipboardCheck, Clock3, Filter, Flag, ListFilter, MessageSquareText, Search, ShieldAlert, UserRound, UsersRound, X } from "lucide-react";
 
 type QueueTab = "الكل" | "تحتاج تدخل" | "متأخرة" | "تجاوزت مدة المرحلة" | "متطلبات ناقصة" | "جاهزة للانتقال";
@@ -21,6 +24,81 @@ const queueTabs: { label: QueueTab; count?: number }[] = [
 function operationalSignals(item: AssociationCase) { const signals: string[] = []; if (item.requirement !== "مكتمل") signals.push("متطلب ناقص يمنع تقدم الطلب"); if (item.daysInStage > associationDemoThresholds.maxStageDays) signals.push("تجاوز الطلب المدة التجريبية للمرحلة"); if (item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push(`لم يتم تحديث الحالة منذ ${item.daysSinceUpdate} يومًا`); return signals.length ? signals : [item.alert]; }
 
 function formatFollowupDate(value: string) { return new Intl.DateTimeFormat("ar-SA", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`)); }
+
+/**
+ * الميزة 2 — اكتشاف الطلبات المتوقفة.
+ *
+ * الإشارات العددية تُحسب دائمًا محليًا (وفي الخادم كذلك) فلا يخترعها النموذج،
+ * ودور النموذج هو ترتيب الأولوية وصياغة سبب التوقّف والإجراء المقترح.
+ * قبل إضافة المفتاح تعمل اللوحة بالقواعد وحدها دون أي انكسار.
+ */
+function StalledCasesPanel() {
+  const [, navigate] = useLocation();
+
+  const ruleFindings = useMemo<StalledCasesResult>(() => ({
+    findings: associationCases.map((item) => {
+      const signals = operationalSignals(item);
+      const flagged = item.priority !== "عادية" || signals.length > 1;
+      return {
+        id: item.id,
+        needsFollowUp: flagged,
+        severity: item.priority === "تحتاج تدخل" ? "تحتاج تدخل" : flagged ? "تحتاج متابعة" : "عادية",
+        signals,
+        summary: item.alert,
+        recommendedAction: item.nextStep,
+      };
+    }),
+    source: "rules",
+  }), []);
+
+  const request = useMemo<StalledCasesRequest>(() => ({
+    thresholds: associationDemoThresholds,
+    cases: associationCases.map((item) => ({
+      id: item.id,
+      name: item.name,
+      stage: item.stage,
+      daysInStage: item.daysInStage,
+      daysSinceUpdate: item.daysSinceUpdate,
+      requirement: item.requirement,
+      owner: item.owner,
+      lastAction: item.lastAction,
+      // مشتقّة من سجل الحالة: كل تحويل أو تواصل مسجّل يظهر كقيد في التاريخ.
+      reassignments: item.history.filter((h) => h.title.includes("تحويل") || h.title.includes("إحالة")).length,
+      beneficiaryContacts: item.history.filter((h) => h.title.includes("تواصل") || h.title.includes("استفسار")).length,
+    })),
+  }), []);
+
+  const { data, loading } = useStalledCases(request, ruleFindings);
+  const byId = new Map(associationCases.map((item) => [item.id, item]));
+  const flagged = data.findings.filter((f) => f.needsFollowUp);
+
+  return <section className="stalled-panel">
+    <div className="association-section-heading">
+      <div>
+        <p className="eyebrow">رصد استباقي<AiBadge source={data.source} loading={loading} /></p>
+        <h2>حالات تبدو متوقفة</h2>
+        <p>ظهرت هذه الحالات لأن سير الإجراء فيها توقّف، قبل أن يتواصل المستفيد.</p>
+      </div>
+      <span className="stalled-count">{flagged.length}</span>
+    </div>
+    {flagged.length ? <div className="stalled-list">{flagged.map((finding) => {
+      const item = byId.get(finding.id);
+      if (!item) return null;
+      return <article className={`stalled-card ${finding.severity === "تحتاج تدخل" ? "urgent" : "watch"}`} key={finding.id} role="button" tabIndex={0}
+        onClick={() => navigate(`/association/cases/${finding.id}`)}
+        onKeyDown={(event) => { if (event.key === "Enter") navigate(`/association/cases/${finding.id}`); }}>
+        <div className="stalled-card-head">
+          <div><strong>{item.name}</strong><small>{finding.id} · {item.stage} · المسؤول: {item.owner}</small></div>
+          <StatusBadge tone={finding.severity === "تحتاج تدخل" ? "danger" : "warning"}>{finding.severity}</StatusBadge>
+        </div>
+        <p className="stalled-summary">{finding.summary}</p>
+        <ul className="stalled-signals">{finding.signals.map((signal) => <li key={signal}><ShieldAlert size={13} />{signal}</li>)}</ul>
+        <p className="stalled-action"><ClipboardCheck size={15} /><span>{finding.recommendedAction}</span></p>
+      </article>;
+    })}</div> : <div className="association-empty"><CheckCircle2 size={26} /><strong>لا توجد حالات متوقفة الآن</strong><p>كل الحالات تسير ضمن المدد المتوقعة.</p></div>}
+    <AiDecisionNotice text="هذا رصد تشغيلي لسير الإجراء فقط، ولا يمثل تقييمًا لأهلية المستفيد أو قرارًا بشأن طلبه." />
+  </section>;
+}
 
 const kpis = [
   { label: "إجمالي الحالات", value: "248", detail: "ضمن نطاق الجمعية", icon: <UsersRound size={18} />, tone: "mint" },
@@ -73,6 +151,7 @@ export function AssociationPage() {
     <div className="association-demo-banner"><BellRing size={16} /><strong>تنبيهات استرشادية</strong><span>هذه القواعد والحدود تجريبية لدعم المتابعة، ولا تمثل قرار أهلية أو أولوية رسميًا.</span></div>
     <section className="association-hero"><div><p className="eyebrow">الأولوية اليوم</p><h2>الحالات التي تحتاج انتباهك</h2><p>بدل انتظار المستفيد حتى يشتكي، ابدأ بالحالات التي يظهر فيها تعطل أو إجراء واضح.</p></div><div className="association-hero-mark"><span>18</span><small>حالة تحتاج تدخل</small></div></section>
     <section className="association-priority-grid"><PriorityCard label="تجاوزت مدة المرحلة" value="3" detail="تحتاج مراجعة اليوم" onClick={() => setTab("تجاوزت مدة المرحلة")} /><PriorityCard label="تحتاج استكمال متطلبات" value="5" detail="ينتظرها إجراء واضح" onClick={() => setTab("متطلبات ناقصة")} /><PriorityCard label="لم تُحدّث مؤخرًا" value="4" detail="افتح وسجل متابعة" onClick={() => setTab("متأخرة")} /></section>
+    <StalledCasesPanel />
     <section className="association-kpi-grid">{kpis.map((item) => <button key={item.label} className={`association-kpi ${item.tone}`} onClick={() => { if (item.label === "تحتاج تدخل") setTab("تحتاج تدخل"); if (item.label === "متأخرة") setTab("متأخرة"); if (item.label === "تجاوزت مدة المرحلة") setTab("تجاوزت مدة المرحلة"); if (item.label === "جاهزة للانتقال") setTab("جاهزة للانتقال"); if (item.label === "متطلبات ناقصة") setTab("متطلبات ناقصة"); }}><span className="kpi-icon">{item.icon}</span><span className="kpi-label">{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></button>)}</section>
     <section className="association-queue"><div className="association-section-heading"><div><p className="eyebrow">قائمة العمل</p><h2>مسار متابعة الطلبات</h2><p>مرشحات تشغيلية تساعدك على معرفة من يحتاج الإجراء التالي.</p></div><span className="mock-tag">بيانات تجريبية</span></div>
       <div className="association-tabs" role="tablist">{queueTabs.map((item) => <button key={item.label} className={tab === item.label ? "active" : ""} onClick={() => setTab(item.label)}>{item.label}{item.count && <b>{item.count}</b>}</button>)}</div>

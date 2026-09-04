@@ -4,8 +4,8 @@ import { FormEvent, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
-const logo = "/manus-storage/sakan360-logo_9d61e873.png";
-const loginVisual = "/manus-storage/sakan360-login-visual_f1b0943c.jpg";
+const logo = "/brand/yusr-logo.svg";
+const loginVisual = "linear-gradient(150deg, #0f7d6b 0%, #0b5a4d 55%, #08403a 100%)";
 
 export function LoginPage() {
   const [, navigate] = useLocation();
@@ -18,7 +18,7 @@ export function LoginPage() {
     window.setTimeout(() => { setLoading(false); toast.success("تم الدخول إلى نموذج يسر التجريبي."); navigate("/start"); }, 550);
   };
   return <main className="login-page" dir="rtl">
-    <section className="login-visual" style={{ backgroundImage: `linear-gradient(90deg, rgba(11,79,70,.26), rgba(11,79,70,.03)), url('${loginVisual}')` }}>
+    <section className="login-visual" style={{ backgroundImage: `linear-gradient(90deg, rgba(11,79,70,.26), rgba(11,79,70,.03)), ${loginVisual}` }}>
       <div className="login-visual-brand"><img src={logo} alt="شعار يسر" /><strong>يسر</strong></div>
       <div className="login-visual-copy"><p className="eyebrow">رحلة واحدة، من الأهلية إلى الاستقرار</p><h1>كل تفاصيل رحلتك السكنية في مكان واحد.</h1><p>تابع حالة طلبك، تعرّف على الخطوة التالية، واطمئن على وحدتك بعد الاستلام.</p></div>
       <div className="login-prototype"><ShieldCheck size={16} />نموذج أولي توضيحي — لا يمثل جهة حكومية رسمية</div>
