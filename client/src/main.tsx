@@ -7,6 +7,8 @@ import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
+// آخر ملف في الحزمة عمدًا — طبقة الهوية يجب أن تأتي بعد كل ما سبقها.
+import "./design.css";
 
 const queryClient = new QueryClient();
 

@@ -1,0 +1,277 @@
+/**
+ * طبقة الهوية البصرية — تُحمَّل أخيرًا لتضبط ما تراكم في الملفات السابقة.
+ *
+ * الاتجاه: منصّة حكومية تحريرية، لا لوحة SaaS.
+ * القرارات الأربعة التي تُخرج الواجهة من المظهر المُولَّد النمطي:
+ *   ١. الحدّ يحلّ محل الظل. الظلال الطافية على كل بطاقة هي أوضح علامة
+ *      على «صندوق أبيض مكرّر» بلا بنية حقيقية.
+ *   ٢. الزوايا تضيق. الانحناء الكبير يقرأ استهلاكيًا؛ الجهات الرسمية أحدّ.
+ *   ٣. لا تدرّج داخل الأسطح. التدرّجات الخفيفة داخل البطاقات زخرفة بلا معنى.
+ *   ٤. التسلسل من الطباعة لا من الصناديق. Almarai بأوزانها الأربعة تحمل
+ *      الفرق بين العنوان والنصّ، فلا نحتاج إطارًا حول كل فقرة.
+ */
+
+:root {
+  /* سلّم أضيق: رسمي، لا استهلاكي */
+  --r-1: 3px;
+  --r-2: 5px;
+  --r-3: 8px;
+  --r-4: 10px;
+  --r-5: 12px;
+
+  --line: #dfe6e3;
+  --line-strong: #c5d3ce;
+  --ink: #14312c;
+  --ink-soft: #5b6f6a;
+  --brand: #0b4f46;
+  --brand-tint: #eef4f2;
+  --accent: #b4671c;
+}
+
+/* ------------------------------------------------------------------ */
+/* ١ — تسطيح الأسطح                                                    */
+/* ------------------------------------------------------------------ */
+
+.metric-card,
+.side-card,
+.requirements-card,
+.notifications-card,
+.tickets-card,
+.profile-main-card,
+.completion-card,
+.bottleneck-card,
+.impact-panel,
+.cases-panel,
+.stalled-panel,
+.stalled-card,
+.journey-navigator,
+.program-card,
+.next-action-card,
+.unified-next-action,
+.unit-twin,
+.association-case-row,
+.followup-card,
+.ticket-form,
+.priority-panel {
+  box-shadow: none;
+  background-image: none;
+  border-radius: var(--r-3);
+  border: 1px solid var(--line);
+}
+
+/* الشريط الجانبي يبقى كتلة مصمتة بلا هالة */
+.sidebar { box-shadow: none; border-inline-start: 0; }
+.nav-item.active { box-shadow: none; border-radius: var(--r-2); }
+.nav-item { border-radius: var(--r-2); }
+
+/* الشريط العلوي: خط فاصل صريح بدل الضبابية الزجاجية */
+.topbar {
+  background: #f7f9f8;
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-bottom-nav {
+  backdrop-filter: none;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------------ */
+/* ٢ — صفّ المؤشرات: إصلاح بنيوي                                        */
+/*                                                                     */
+/* كل تخطيط هذا الصفّ كان معلّقًا على ‎.metric-grid‎ — وهي فئة لا وجود   */
+/* لها في أي ملف tsx. فبقيت البطاقات أزرارًا inline-block تتدفّق سطريًا  */
+/* وتتراكب. الشبكة الآن على الحاوية الفعلية.                            */
+/* ------------------------------------------------------------------ */
+
+.metrics-section,
+.staff-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  padding-top: 0;
+}
+
+.staff-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* الخط الواصل والنقاط كانا يفترضان تخطيطًا لم يُطبَّق أصلًا */
+.metrics-section:before,
+.staff-metrics:before,
+.metrics-section .metric-card:before,
+.staff-metrics .metric-card:before { content: none; }
+
+.metrics-section .metric-card,
+.staff-metrics .metric-card {
+  min-height: 0;
+  padding: 16px;
+  background: #fff;
+  background-image: none;
+  box-shadow: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: right;
+  position: relative;
+}
+
+/* شريط رفيع على الحافّة البادئة — بديل بنيوي عن الظل الطافي */
+.metrics-section .metric-card:after,
+.staff-metrics .metric-card:after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--brand);
+  opacity: .22;
+}
+.metric-card.orange:after { background: var(--accent); opacity: .45; }
+.metric-card.stone:after  { opacity: .12; }
+
+.metric-card .metric-icon {
+  position: static;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-2);
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+.metric-card p { margin: 0; font-size: 11px; color: var(--ink-soft); font-weight: 400; }
+.metric-card strong {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.4px;
+  margin: 0;
+  line-height: 1.25;
+}
+.metric-card .metric-detail {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  width: 100%;
+  font-size: 10px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 760px) {
+  .metrics-section,
+  .staff-metrics { grid-template-columns: 1fr; gap: 8px; padding-top: 0; }
+  .metrics-section .metric-card,
+  .staff-metrics .metric-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+  }
+  .metric-card .metric-icon { margin-bottom: 0; flex: none; }
+  .metric-card p { font-size: 10px; }
+  .metric-card strong { font-size: 17px; }
+  /* التفصيل ينزل تحت العنوان بدل أن يقطع الصفّ */
+  .metric-card .metric-detail {
+    margin: 0 auto 0 0;
+    padding: 0;
+    border: 0;
+    width: auto;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* ٣ — الطباعة: التسلسل من الوزن لا من الصناديق                        */
+/* ------------------------------------------------------------------ */
+
+body { font-weight: 400; letter-spacing: 0; }
+
+h1, h2, h3 { font-family: "Almarai", sans-serif; }
+
+.page-intro h1 {
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.22;
+}
+.page-intro:after { content: none; } /* النسيج الخلفي كان زخرفة بلا وظيفة */
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--ink-soft);
+  text-transform: none;
+}
+
+.section-heading h2,
+.association-section-heading h2 {
+  font-weight: 800;
+  letter-spacing: -.5px;
+}
+
+/* ------------------------------------------------------------------ */
+/* ٤ — الأزرار: حواف واضحة، لا حبّات طافية                              */
+/* ------------------------------------------------------------------ */
+
+.primary-btn,
+.secondary-btn,
+.program-select,
+.submit-ticket {
+  border-radius: var(--r-2);
+  box-shadow: none;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.primary-btn { background: var(--brand); border: 1px solid var(--brand); }
+.primary-btn:hover { background: #0d5f54; }
+
+.secondary-btn {
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  color: var(--brand);
+}
+.secondary-btn:hover { background: var(--brand-tint); }
+
+/* الشارات تبقى حبّة — هي الاستثناء الوحيد المبرَّر، لأنها وسم حالة */
+.status-badge { border-radius: var(--r-pill); font-weight: 700; }
+.ai-badge { border-radius: var(--r-2); }
+
+/* ------------------------------------------------------------------ */
+/* ٥ — لوحات الذكاء الاصطناعي تتبع نفس اللغة                            */
+/* ------------------------------------------------------------------ */
+
+.ai-decision-notice {
+  border-radius: 0;
+  border: 0;
+  border-inline-start: 3px solid var(--brand);
+  background: var(--brand-tint);
+  padding: 12px 14px;
+}
+
+.stalled-card { border-radius: var(--r-3); }
+.stalled-card:hover, .stalled-card:focus-visible { box-shadow: none; transform: none; border-color: var(--line-strong); }
+.stalled-card.urgent { border-inline-start: 3px solid #b4432c; }
+.stalled-card.watch  { border-inline-start: 3px solid var(--accent); }
+.stalled-count { border-radius: var(--r-2); }
+.stalled-action { border-radius: var(--r-2); }
+.ai-factors li { border-radius: var(--r-2); }
+.ai-waiting-on { border-radius: var(--r-2); }
+
+/* ------------------------------------------------------------------ */
+/* ٦ — تهدئة الحركة عند التفاعل                                        */
+/* ------------------------------------------------------------------ */
+
+.metric-button:hover,
+.association-case-row:hover { border-color: var(--line-strong); background: #fcfdfd; }
+.metric-button:hover { transform: none; }

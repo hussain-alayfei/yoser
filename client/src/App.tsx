@@ -5,6 +5,9 @@ import "./upgrade.css";
 import "./journey-experience.css";
 import "./ai.css";
 import "./motion.css";
+// design.css يُستورد في main.tsx بعد index.css لا هنا:
+// وحدات ES تُقيَّم قبل الاستيرادات التالية لها، فلو بقي هنا لجاء index.css
+// بعده في الحزمة وأعاد قيم :root القديمة ونَسَخ التسطيح.
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
