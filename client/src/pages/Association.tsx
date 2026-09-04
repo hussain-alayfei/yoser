@@ -37,14 +37,21 @@ function StalledCasesPanel() {
 
   const ruleFindings = useMemo<StalledCasesResult>(() => ({
     findings: associationCases.map((item) => {
-      const signals = operationalSignals(item);
-      const flagged = item.priority !== "عادية" || signals.length > 1;
+      // إشارات توقّف حقيقية فقط. لا نستخدم operationalSignals هنا لأنها ترجع
+      // item.alert عند غياب أي إشارة، فتظهر رسالة مثل «جميع المتطلبات مكتملة»
+      // كأنها دليل على تعطّل الحالة، وهذا عكس المقصود.
+      const signals: string[] = [];
+      if (item.requirement !== "مكتمل") signals.push(`متطلب غير مكتمل (${item.requirement}) يمنع تقدّم الطلب`);
+      if (item.daysInStage > associationDemoThresholds.maxStageDays) signals.push(`بقي الطلب ${item.daysInStage} يومًا في مرحلة «${item.stage}» والحدّ المعتاد ${associationDemoThresholds.maxStageDays} يومًا`);
+      if (item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push(`لا يوجد تحديث منذ ${item.daysSinceUpdate} يومًا`);
+      if (item.requirement === "مكتمل" && item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push("المتطلبات مكتملة لكن الطلب لم يتحرك");
+
       return {
         id: item.id,
-        needsFollowUp: flagged,
-        severity: item.priority === "تحتاج تدخل" ? "تحتاج تدخل" : flagged ? "تحتاج متابعة" : "عادية",
+        needsFollowUp: signals.length > 0,
+        severity: signals.length >= 3 || item.priority === "تحتاج تدخل" ? "تحتاج تدخل" : signals.length ? "تحتاج متابعة" : "عادية",
         signals,
-        summary: item.alert,
+        summary: signals.length ? item.alert : "تسير الحالة ضمن المدد المتوقعة.",
         recommendedAction: item.nextStep,
       };
     }),
