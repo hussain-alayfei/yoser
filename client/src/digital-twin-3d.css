@@ -1,0 +1,780 @@
+/*
+ * Residential Digital Twin — R3F/WebGL workspace.
+ * This file intentionally loads after the general responsive/iPhone layers.
+ * Scope is limited to the digital-twin page so it can stay wide, technical and
+ * interaction-first without reintroducing the generic card-heavy product style.
+ */
+
+.twin3d-viewer {
+  --twin-bg: #edf2f0;
+  --twin-panel: #ffffff;
+  --twin-line: #d5e0dc;
+  --twin-ink: #173f38;
+  --twin-muted: #71847f;
+  --twin-brand: #0b4f46;
+  --twin-brand-soft: #e4efec;
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--twin-line);
+  border-radius: 10px;
+  background: var(--twin-panel);
+}
+
+.twin3d-commandbar {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--twin-line);
+  background: #fbfcfc;
+}
+
+.twin3d-commandbar-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.twin3d-live-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #2d8e67;
+  box-shadow: 0 0 0 4px rgba(45,142,103,.11);
+}
+
+.twin3d-commandbar-title > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.twin3d-commandbar-title small {
+  direction: ltr;
+  justify-self: start;
+  color: #82928e;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 8px;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.twin3d-commandbar-title strong {
+  color: var(--twin-ink);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.twin3d-view-presets,
+.twin3d-command-actions,
+.twin3d-layer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.twin3d-view-presets {
+  padding: 3px;
+  border: 1px solid var(--twin-line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.twin3d-view-presets button,
+.twin3d-command-actions button,
+.twin3d-layer-buttons button {
+  appearance: none;
+  border: 0;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 5px;
+  background: transparent;
+  color: #61746f;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 0 8px;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.twin3d-view-presets button:hover,
+.twin3d-command-actions button:hover,
+.twin3d-layer-buttons button:hover {
+  background: #edf4f2;
+  color: var(--twin-brand);
+}
+
+.twin3d-view-presets button.active,
+.twin3d-command-actions button.active,
+.twin3d-layer-buttons button.active {
+  background: var(--twin-brand-soft);
+  color: var(--twin-brand);
+}
+
+.twin3d-command-actions button {
+  border: 1px solid var(--twin-line);
+  background: #fff;
+}
+
+.twin3d-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: clamp(530px, 60vw, 680px);
+  min-height: 530px;
+  overflow: hidden;
+  background: var(--twin-bg);
+  isolation: isolate;
+  touch-action: none;
+}
+
+.twin3d-canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: 0;
+}
+
+.twin3d-hud {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(23,63,56,.12);
+  background: rgba(255,255,255,.9);
+  color: #4d645e;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.twin3d-hud-status {
+  top: 14px;
+  right: 14px;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 9px;
+}
+
+.twin3d-hud-status svg { color: var(--twin-brand); }
+.twin3d-hud-status strong { color: var(--twin-ink); font-size: 10px; }
+
+.twin3d-hud-help {
+  left: 14px;
+  bottom: 14px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 8px;
+}
+
+.twin3d-hud-help i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #a8b7b3;
+}
+
+.twin3d-layerbar {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 14px;
+  border-top: 1px solid var(--twin-line);
+  background: #fbfcfc;
+}
+
+.twin3d-layerbar-label,
+.twin3d-quality {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #657873;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.twin3d-layerbar-label svg,
+.twin3d-quality svg { color: var(--twin-brand); }
+
+.twin3d-layer-buttons {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.twin3d-layer-buttons::-webkit-scrollbar { display: none; }
+
+.twin3d-layer-buttons button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  border: 1px solid var(--twin-line);
+  background: #fff;
+}
+
+.twin3d-layer-buttons button.active {
+  border-color: #bfd4cd;
+  background: #edf5f2;
+}
+
+.twin3d-world-label {
+  min-width: 142px;
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid rgba(11,79,70,.18);
+  border-radius: 7px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 7px 24px rgba(17,47,42,.12);
+  color: #173f38;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+}
+
+.twin3d-world-label small {
+  color: #71847f;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.twin3d-world-label strong {
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.twin3d-world-label span {
+  color: #0b4f46;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.twin3d-maintenance-marker {
+  appearance: none;
+  border: 1px solid rgba(148,67,46,.2);
+  border-radius: 6px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  background: rgba(255,249,246,.96);
+  color: #8d4938;
+  box-shadow: 0 7px 20px rgba(99,58,45,.12);
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.twin3d-maintenance-marker.planned {
+  border-color: rgba(60,122,104,.23);
+  background: rgba(244,250,248,.96);
+  color: #276b59;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page-level workspace: wide viewer + factual inspector.                     */
+/* -------------------------------------------------------------------------- */
+
+.construction-twin.twin-workspace,
+.unit-twin.twin-home-workspace {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+.twin-workspace-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.twin-workspace-header > div:first-child { max-width: 720px; }
+.twin-workspace-header h2 {
+  margin: 4px 0 6px;
+  color: #15312c;
+  font-size: 23px;
+  line-height: 1.35;
+}
+.twin-workspace-header p:not(.eyebrow) {
+  margin: 0;
+  color: #647873;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.twin-overall-progress {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid #d8e3df;
+  border-radius: 7px;
+  background: #fff;
+}
+.twin-overall-progress span { color: #657a74; font-size: 9px; font-weight: 700; }
+.twin-overall-progress strong { color: #0b4f46; font-size: 18px; }
+.twin-overall-progress i {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e4ebe8;
+}
+.twin-overall-progress i b { display: block; height: 100%; border-radius: inherit; background: #0b4f46; }
+.twin-overall-progress small { grid-column: 1 / -1; color: #889793; font-size: 8px; }
+
+.twin-disclaimer {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  padding: 0 10px;
+  border-right: 3px solid #b98b3f;
+  background: #faf7ef;
+  color: #6c6049 !important;
+  font-size: 9px;
+}
+.twin-disclaimer svg { flex: 0 0 auto; color: #916a28; }
+
+.twin-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 318px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.twin-viewport-panel {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+/* Hide the legacy CSS-prototype chrome when the new WebGL viewer is present. */
+.twin-viewport-toolbar,
+.twin-viewport-footer,
+.building-legend {
+  display: none;
+}
+
+.twin-inspector,
+.home-twin-inspector {
+  min-width: 0;
+  align-self: stretch;
+  border: 1px solid #d9e3df !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  padding: 17px !important;
+}
+
+.floor-detail-title,
+.home-inspector-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #e4ebe8;
+}
+.floor-detail-title h3,
+.home-inspector-title h3 {
+  margin: 3px 0 0;
+  color: #15312c;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.floor-progress-large {
+  padding: 16px 0 13px;
+  border-bottom: 1px solid #e5ece9;
+}
+.floor-progress-large > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: #71817d;
+  font-size: 9px;
+}
+.floor-progress-large strong { color: #0b4f46; font-size: 24px; }
+.floor-progress-large > i {
+  display: block;
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e5ece9;
+}
+.floor-progress-large > i b { display: block; height: 100%; background: #0b4f46; border-radius: inherit; }
+
+.floor-dates {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+}
+.floor-dates > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #edf1ef;
+}
+.floor-dates dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6d7f7a;
+  font-size: 9px;
+}
+.floor-dates dt svg { color: #0b4f46; }
+.floor-dates dd { margin: 0; color: #294c45; font-size: 9px; font-weight: 800; text-align: left; }
+
+.floor-work-groups { display: grid; gap: 15px; padding-top: 14px; }
+.floor-work-groups > div { display: grid; gap: 6px; }
+.floor-work-groups h4 { margin: 0; color: #46625b; font-size: 9px; font-weight: 800; }
+.work-chip {
+  width: 100%;
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid #e2e9e6;
+  border-radius: 5px;
+  color: #4a615b;
+  background: #fbfcfc;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.work-chip.done svg { color: #2a7b59; }
+.work-chip.active { border-color: #ead9bc; background: #fbf7ef; }
+.work-chip.active svg { color: #a9752d; }
+.work-chip.next svg { color: #0b4f46; }
+.work-empty { color: #879793; font-size: 9px; }
+
+.construction-lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .42fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.construction-updates,
+.construction-next-card {
+  border: 1px solid #dce5e2 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Post-handover inspector and room/system navigation.                         */
+/* -------------------------------------------------------------------------- */
+
+.unit-twin.twin-home-workspace {
+  display: block;
+  min-height: 0;
+}
+
+.home-twin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 318px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.home-inspector-health {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5ece9;
+}
+.home-inspector-health span { color: #6d817b; font-size: 9px; }
+.home-inspector-health strong { color: #226a4c; font-size: 12px; }
+.home-inspector-health i {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e6eeeb;
+}
+.home-inspector-health i b { display: block; width: 88%; height: 100%; background: #2c8d65; }
+
+.home-room-list,
+.home-system-list {
+  display: grid;
+  gap: 5px;
+  padding-top: 13px;
+}
+.home-room-list h4,
+.home-system-list h4 {
+  margin: 0 0 3px;
+  color: #657873;
+  font-size: 9px;
+}
+.home-room-list button,
+.home-system-list button {
+  appearance: none;
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid #e0e8e5;
+  border-radius: 5px;
+  background: #fff;
+  color: #506761;
+  font-family: inherit;
+  font-size: 9px;
+  text-align: right;
+}
+.home-room-list button:hover,
+.home-system-list button:hover { border-color: #bdd1ca; background: #f6faf8; }
+.home-room-list button.active,
+.home-system-list button.active {
+  border-color: #a9c6bd;
+  background: #edf5f2;
+  color: #0b4f46;
+  font-weight: 800;
+}
+.home-room-list button span,
+.home-system-list button span { flex: 1; min-width: 0; }
+.home-system-list button > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: auto;
+}
+.home-system-list button > i.success { background: #35a06e; }
+.home-system-list button > i.warning { background: #d8913d; }
+
+.home-selected-detail {
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid #e4ebe8;
+}
+.home-selected-detail > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.home-selected-detail h4 { margin: 0; color: #244941; font-size: 11px; }
+.home-selected-detail dl { margin: 10px 0 0; display: grid; gap: 7px; }
+.home-selected-detail dl > div { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.home-selected-detail dt { color: #7b8d88; font-size: 8px; }
+.home-selected-detail dd { margin: 0; color: #38564f; font-size: 8px; font-weight: 800; text-align: left; }
+.home-selected-detail .component-action { margin-top: 11px; }
+
+.twin3d-viewer.compact .twin3d-canvas-wrap {
+  height: 360px;
+  min-height: 360px;
+}
+.twin3d-viewer.compact .twin3d-commandbar { grid-template-columns: 1fr auto; }
+.twin3d-viewer.compact .twin3d-view-presets { display: none; }
+
+/* -------------------------------------------------------------------------- */
+/* Unit page: give the twin breathing room instead of a dashboard card stack. */
+/* -------------------------------------------------------------------------- */
+
+.construction-overview {
+  margin-bottom: 13px;
+  border: 1px solid #dce5e2 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #15312c !important;
+  box-shadow: none !important;
+}
+
+.unit-overview-actions .unit-demo-toggle {
+  border-color: #c9d8d3;
+  background: #fff;
+  color: #0b4f46;
+  min-height: 34px;
+  font-weight: 800;
+}
+.unit-overview-actions .unit-demo-toggle:hover { background: #edf5f2; }
+
+.unit-next-action { margin-bottom: 13px; }
+
+/* -------------------------------------------------------------------------- */
+/* Responsive behavior                                                        */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .twin-workspace-grid,
+  .home-twin-grid {
+    grid-template-columns: minmax(0, 1fr) 285px;
+  }
+
+  .twin3d-commandbar {
+    grid-template-columns: minmax(170px, 1fr) auto;
+  }
+  .twin3d-command-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+@media (max-width: 980px) {
+  .twin-workspace-grid,
+  .home-twin-grid,
+  .construction-lower-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .twin-inspector,
+  .home-twin-inspector { order: 2; }
+
+  .twin-workspace-header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .twin-overall-progress { max-width: 360px; }
+
+  .twin3d-canvas-wrap {
+    height: clamp(500px, 68vw, 620px);
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 760px) {
+  .twin3d-viewer {
+    border-radius: 8px;
+  }
+
+  .twin3d-commandbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .twin3d-commandbar-title small { display: none; }
+  .twin3d-commandbar-title strong { font-size: 10px; }
+
+  .twin3d-view-presets {
+    width: auto;
+    max-width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .twin3d-view-presets::-webkit-scrollbar { display: none; }
+  .twin3d-view-presets button { flex: 0 0 34px; width: 34px; padding: 0; }
+  .twin3d-view-presets button span { display: none; }
+
+  .twin3d-command-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .twin3d-command-actions::-webkit-scrollbar { display: none; }
+  .twin3d-command-actions button { flex: 1 0 auto; min-height: 38px; }
+
+  .twin3d-canvas-wrap {
+    height: clamp(390px, 112vw, 520px);
+    min-height: 390px;
+  }
+
+  .twin3d-hud-status { top: 9px; right: 9px; }
+  .twin3d-hud-help {
+    left: 9px;
+    right: 9px;
+    bottom: 9px;
+    justify-content: center;
+  }
+  .twin3d-hud-help span:nth-of-type(2),
+  .twin3d-hud-help span:nth-of-type(3),
+  .twin3d-hud-help i { display: none; }
+
+  .twin3d-layerbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding: 8px;
+  }
+  .twin3d-layerbar-label,
+  .twin3d-quality { display: none; }
+  .twin3d-layer-buttons { width: 100%; }
+  .twin3d-layer-buttons button { min-height: 38px; }
+
+  .twin-workspace-header h2 { font-size: 20px; }
+  .twin-overall-progress { max-width: none; }
+
+  .twin-inspector,
+  .home-twin-inspector { padding: 14px !important; }
+
+  .home-room-list,
+  .home-system-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-room-list h4,
+  .home-system-list h4 { grid-column: 1 / -1; }
+
+  .twin3d-world-label { min-width: 118px; padding: 6px 8px; }
+  .twin3d-maintenance-marker span { display: none; }
+  .twin3d-maintenance-marker { width: 30px; padding: 0; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .twin3d-commandbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .twin3d-commandbar-title { gap: 7px; }
+  .twin3d-live-dot { width: 7px; height: 7px; flex-basis: 7px; }
+
+  .twin3d-command-actions button span { display: none; }
+  .twin3d-command-actions button { min-width: 42px; flex: 1; }
+
+  .twin3d-canvas-wrap {
+    height: 410px;
+    min-height: 410px;
+  }
+
+  .twin3d-layer-buttons button span { display: none; }
+  .twin3d-layer-buttons button { min-width: 44px; flex: 1; padding: 0 4px; }
+
+  .home-room-list,
+  .home-system-list { grid-template-columns: minmax(0, 1fr); }
+  .home-room-list h4,
+  .home-system-list h4 { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twin3d-view-presets button,
+  .twin3d-command-actions button,
+  .twin3d-layer-buttons button {
+    transition: none;
+  }
+}
