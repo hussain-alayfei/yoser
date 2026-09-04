@@ -46,3 +46,27 @@
     transform: none;
   }
 }
+
+/*
+ * العلامة في الشريط العلوي — للجوال فقط.
+ * على الشاشات الكبيرة تظهر العلامة داخل القائمة الجانبية، فإظهارها مرّتين تكرار.
+ */
+.topbar-brand { display: none; }
+
+@media (max-width: 760px) {
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #0b4f46;
+  }
+  .topbar-brand-mark { width: 28px; height: 28px; }
+  .topbar-brand strong {
+    font-family: "Tajawal", sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    line-height: 1;
+  }
+}

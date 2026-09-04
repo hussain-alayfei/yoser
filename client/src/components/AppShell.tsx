@@ -85,6 +85,12 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
       <main className="main-content">
         <header className="topbar">
           <button className="menu-toggle" aria-label={open ? "إغلاق القائمة" : "فتح القائمة"} aria-expanded={open} aria-controls="app-sidebar" onClick={() => setOpen(value => !value)}><Menu size={22} /></button>
+          {/* العلامة تعيش داخل القائمة الجانبية، والقائمة تختفي على الجوال،
+              فكانت الهوية غائبة تمامًا عن شاشات الهاتف. هذه نسخة مصغّرة تظهر هناك فقط. */}
+          <Link href="/home" className="topbar-brand" aria-label="يسر · الصفحة الرئيسية">
+            <img src={logo} alt="" className="topbar-brand-mark" />
+            <strong>يسر</strong>
+          </Link>
           <div className="topbar-spacer" />
           <button className="topbar-bell" aria-label="الإشعارات" onClick={() => navigate("/notifications")}><Bell size={20} /><i /></button>
           <button className="profile-chip" onClick={() => navigate("/profile")}><span>أحمد</span><UserRound size={19} /></button>
