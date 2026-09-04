@@ -1,0 +1,646 @@
+/**
+ * Responsive hardening layer.
+ *
+ * This file is intentionally imported after product-polish.css. Earlier
+ * prototype styles contain their own media queries, but some later desktop
+ * overrides were winning the cascade on small screens. Keep responsive rules
+ * here so mobile/tablet behavior has one final source of truth while desktop
+ * presentation remains unchanged.
+ */
+
+/* Safe sizing on every viewport. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell,
+.main-content,
+.page-intro,
+.page-body,
+.page-body > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Grid/flex children are allowed to shrink instead of forcing page overflow. */
+.journey-start-layout > *,
+.home-layout > *,
+.profile-layout > *,
+.staff-layout > *,
+.new-ticket-layout > *,
+.ticket-detail-grid > *,
+.twin-workspace-grid > *,
+.construction-lower-grid > *,
+.association-case-grid > *,
+.insight-grid > * {
+  min-width: 0;
+}
+
+/* A higher-specificity legacy rule kept white copy from the old dark result
+   panel after that panel was redesigned as a light surface. Fix it globally. */
+.journey-start-result .prototype-note {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.journey-start-result .prototype-note svg {
+  color: var(--brand);
+}
+
+.journey-start-result .prototype-note,
+.journey-start-result .prototype-note * {
+  overflow-wrap: anywhere;
+}
+
+/* Scrollable data regions must scroll themselves, never the whole page. */
+.cases-table-wrap,
+.maintenance-flow,
+.ticket-steps,
+.association-tabs,
+.detail-status-line {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1050px) {
+  /* The content column is narrower here because the desktop sidebar is still
+     visible. Collapse expensive two-column workspaces before they feel cramped. */
+  .twin-workspace-grid,
+  .construction-grid,
+  .construction-lower-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .twin-inspector {
+    order: 2;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Critical regression fix: product-polish.css reintroduced a desktop
+     minmax(300px, ...) second column after upgrade.css had already stacked it. */
+  .journey-start-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+
+  .journey-start-form {
+    order: 1;
+  }
+
+  .journey-start-result {
+    order: 2;
+    min-height: 0;
+    width: 100%;
+  }
+
+  .home-layout,
+  .profile-layout,
+  .staff-layout,
+  .new-ticket-layout,
+  .ticket-detail-grid,
+  .association-case-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-side,
+  .profile-side,
+  .staff-side {
+    min-width: 0;
+  }
+
+  .unified-next-action {
+    flex-wrap: wrap;
+  }
+
+  .unified-next-copy {
+    min-width: 0;
+  }
+
+  .twin-workspace-header {
+    align-items: start;
+  }
+
+  .twin-overall-progress {
+    width: min(100%, 320px);
+  }
+}
+
+@media (max-width: 760px) {
+  /* Shell and page spacing. */
+  .main-content {
+    width: 100%;
+    overflow: visible;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .page-intro {
+    padding: 20px 16px 13px;
+    align-items: flex-start;
+  }
+
+  .page-intro h1 {
+    font-size: clamp(23px, 7vw, 27px);
+    line-height: 1.35;
+  }
+
+  .page-subtitle {
+    max-width: 100%;
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  .page-actions {
+    width: 100%;
+  }
+
+  .page-actions > a,
+  .page-actions > button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .page-body {
+    width: 100%;
+    padding-inline: 16px;
+  }
+
+  /* Mobile navigation: drawer is off-canvas and bottom navigation owns the
+     persistent destinations. The association space has four destinations. */
+  .sidebar {
+    width: min(278px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+
+  .mobile-bottom-nav {
+    height: auto;
+    min-height: 66px;
+    padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .association-shell .mobile-bottom-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mobile-nav-item {
+    min-width: 0;
+    min-height: 56px;
+    padding-inline: 2px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  /* Journey map: use a horizontal stage strip rather than squeezing five
+     desktop columns into the phone width. */
+  .journey-navigator {
+    width: auto;
+    margin-inline: 16px;
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .journey-navigator-head {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .journey-progress-compact {
+    min-width: 96px;
+  }
+
+  .journey-stage-list {
+    display: flex;
+    grid-template-columns: none;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 12px 0 5px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .journey-stage-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .journey-stage-list li {
+    flex: 0 0 104px;
+    min-width: 104px;
+    scroll-snap-align: start;
+  }
+
+  .journey-stage-copy strong {
+    white-space: normal;
+    line-height: 1.45;
+  }
+
+  /* Start/profile form: one readable task at a time. */
+  .journey-start-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .journey-start-form,
+  .journey-start-result {
+    width: 100%;
+    max-width: 100%;
+    padding: 18px;
+  }
+
+  .journey-start-form .section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  .journey-start-form .section-heading > div {
+    min-width: 0;
+    flex: 1 1 210px;
+  }
+
+  .completion-pill {
+    flex: none;
+  }
+
+  .onboarding-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin: 18px 0;
+  }
+
+  .onboarding-fields label,
+  .onboarding-fields select,
+  .onboarding-fields input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .onboarding-fields select,
+  .onboarding-fields input {
+    min-height: 48px;
+  }
+
+  .journey-start-form .primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .journey-start-result h2 {
+    max-width: 100%;
+    font-size: 22px;
+    line-height: 1.45;
+  }
+
+  .result-orbit {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 14px;
+  }
+
+  .result-route {
+    margin: 20px 0;
+    gap: 8px 10px;
+  }
+
+  .journey-start-result .prototype-note {
+    margin-top: 15px;
+    padding: 10px;
+    font-size: 10px;
+    line-height: 1.75;
+  }
+
+  /* Primary next step: copy first, full-width action second. */
+  .unified-next-action {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 15px;
+  }
+
+  .unified-next-action > .primary-btn,
+  .unified-next-action > .secondary-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .unified-next-copy h2 {
+    line-height: 1.45;
+  }
+
+  .ai-waiting-on {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* Common responsive content layouts. */
+  .home-side,
+  .profile-side,
+  .staff-side,
+  .insight-grid,
+  .association-two-col,
+  .construction-lower-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-fields,
+  .form-row,
+  .case-requirements,
+  .floor-dates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .program-card,
+  .application-summary,
+  .application-review-card,
+  .create-application-card,
+  .next-action-card,
+  .association-case-header,
+  .association-next-card {
+    max-width: 100%;
+  }
+
+  .application-review-card,
+  .create-application-card {
+    align-items: stretch;
+  }
+
+  .application-review-card .primary-btn,
+  .create-application-card .primary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Toolbars wrap into usable controls instead of shrinking labels. */
+  .notification-toolbar,
+  .case-toolbar,
+  .association-filter-bar {
+    max-width: 100%;
+  }
+
+  .association-filter-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .association-filter-bar label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .association-filter-bar label,
+  .association-filter-bar label:first-child,
+  .association-filter-bar .filter-reset {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .association-filter-bar select {
+    min-width: 0;
+  }
+
+  /* Operational cards: enough structure to scan, never horizontal clipping. */
+  .association-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .association-kpi {
+    min-width: 0;
+    min-height: 106px;
+  }
+
+  .association-case-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+    gap: 10px;
+  }
+
+  .association-case-person,
+  .association-case-row > div {
+    min-width: 0;
+  }
+
+  .association-case-row strong,
+  .association-case-row span,
+  .association-case-row small {
+    overflow-wrap: anywhere;
+  }
+
+  .association-case-action {
+    grid-column: 1 / -1;
+  }
+
+  /* Data tables deliberately scroll inside their own frame. */
+  .cases-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .cases-table {
+    width: max(100%, 640px);
+  }
+
+  /* Digital twin remains useful on a phone without a fixed desktop canvas. */
+  .twin-workspace-header {
+    display: grid;
+    gap: 10px;
+  }
+
+  .twin-overall-progress {
+    width: 100%;
+  }
+
+  .twin-render-surface,
+  .twin-render-surface .building-model-stage {
+    width: 100%;
+    min-height: clamp(300px, 82vw, 390px);
+    height: clamp(300px, 82vw, 390px);
+  }
+
+  .twin-viewport-toolbar,
+  .twin-viewport-footer {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .twin-viewport-footer {
+    flex-direction: column;
+  }
+
+  .building-legend {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .page-body {
+    padding-inline: 12px;
+  }
+
+  .page-intro {
+    padding-inline: 12px;
+  }
+
+  .journey-navigator {
+    margin-inline: 12px;
+  }
+
+  .journey-navigator-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .journey-navigator-head > div:first-child {
+    min-width: 0;
+  }
+
+  .journey-navigator-head small {
+    line-height: 1.55;
+  }
+
+  .journey-stage-list li {
+    flex-basis: 94px;
+    min-width: 94px;
+  }
+
+  .journey-start-form,
+  .journey-start-result {
+    padding: 16px;
+  }
+
+  .journey-start-result h2 {
+    font-size: 20px;
+  }
+
+  .section-heading h2 {
+    font-size: 18px;
+    line-height: 1.45;
+  }
+
+  .notification-toolbar {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .notification-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .notification-toolbar button {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .association-filter-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .association-filter-bar label:first-child {
+    grid-column: auto;
+  }
+
+  .association-case-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .association-case-row > div:nth-child(4),
+  .association-case-row .association-case-action {
+    grid-column: auto;
+  }
+
+  .association-case-action {
+    justify-content: flex-start;
+    border-top: 1px solid var(--line);
+    padding-top: 9px;
+  }
+
+  .association-kpi {
+    min-height: 96px;
+    padding: 11px;
+  }
+
+  .association-kpi strong {
+    font-size: 22px;
+  }
+
+  .maintenance-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .component-pills {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .building-floor {
+    grid-template-columns: minmax(0, 1fr) 86px;
+  }
+
+  .floor-state {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 390px) {
+  .topbar {
+    padding-inline: 10px;
+    gap: 8px;
+  }
+
+  .page-intro,
+  .page-body {
+    padding-inline: 10px;
+  }
+
+  .journey-navigator {
+    margin-inline: 10px;
+  }
+
+  .journey-start-form,
+  .journey-start-result {
+    padding: 14px;
+  }
+
+  .completion-pill {
+    width: 100%;
+    text-align: center;
+  }
+
+  .association-kpi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
