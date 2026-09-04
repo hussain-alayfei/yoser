@@ -1,0 +1,757 @@
+/**
+ * Final product-quality layer.
+ *
+ * Goal: a calm Saudi public-service product, not a generic AI-generated SaaS
+ * dashboard. This file intentionally comes last so it can remove decorative
+ * styling accumulated by earlier prototype passes without rewriting every page.
+ */
+
+:root {
+  --surface: #ffffff;
+  --surface-soft: #f6f8f7;
+  --surface-brand: #edf4f1;
+  --canvas: #f4f6f5;
+  --ink: #15312c;
+  --ink-2: #38534d;
+  --ink-3: #687a75;
+  --brand: #0b4f46;
+  --brand-strong: #073d36;
+  --brand-line: #b8cec7;
+  --line: #dce4e1;
+  --line-strong: #c2d0cb;
+  --warning-bg: #fbf5e8;
+  --warning-ink: #785315;
+  --danger-bg: #fbefec;
+  --danger-ink: #913e31;
+  --radius-control: 5px;
+  --radius-surface: 8px;
+  --radius-dialog: 10px;
+}
+
+html,
+body,
+#root,
+.app-shell {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+body {
+  font-family: "Almarai", sans-serif;
+  font-weight: 400;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Contrast: dark text is the default everywhere outside intentional dark UI. */
+/* -------------------------------------------------------------------------- */
+
+.main-content,
+.page-intro,
+.page-body,
+.journey-navigator,
+.journey-continuation,
+.program-card,
+.requirements-card,
+.notifications-card,
+.tickets-card,
+.profile-main-card,
+.completion-card,
+.side-card,
+.unit-twin,
+.construction-twin,
+.stalled-panel,
+.cases-panel,
+.journey-start-form,
+.journey-start-result,
+.application-review-card,
+.journey-empty-state {
+  color: var(--ink);
+}
+
+.page-body p,
+.page-intro p,
+.page-subtitle,
+.journey-start-result p,
+.journey-start-result .eyebrow,
+.journey-start-result .term-help summary,
+.journey-start-result .term-help p,
+.journey-start-result .term-help strong {
+  color: var(--ink-3);
+}
+
+.page-body h1,
+.page-body h2,
+.page-body h3,
+.page-body h4,
+.page-intro h1,
+.journey-start-result h2 {
+  color: var(--ink);
+}
+
+/* White is reserved for genuinely dark, high-contrast surfaces. */
+.sidebar,
+.sidebar a,
+.sidebar button,
+.primary-btn,
+.login-visual,
+.login-visual h1,
+.login-visual p,
+.login-visual .eyebrow {
+  color: #fff;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Remove prototype decoration and repeated “AI-generated” visual signatures. */
+/* -------------------------------------------------------------------------- */
+
+.page-intro::before,
+.page-intro::after,
+.brand-lockup::after,
+.home-hero::before,
+.home-hero::after,
+.journey-panel::before,
+.journey-panel::after,
+.profile-main-card::before,
+.requirements-card::before,
+.notifications-card::before,
+.tickets-card::before,
+.cases-panel::before,
+.program-card::before,
+.completion-card::before,
+.bottleneck-card::before,
+.application-summary::after,
+.unit-overview::after,
+.onboarding-art::before,
+.onboarding-art::after,
+.journey-start-result::after,
+.metric-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+.topbar,
+.mobile-bottom-nav,
+.brand-lockup,
+.login-visual-brand,
+.journey-start-result,
+.onboarding-art,
+.completion-card,
+.impact-panel,
+.ticket-detail-hero,
+.unit-visual,
+.unified-next-action,
+.home-hero,
+.metric-card,
+.program-card,
+.side-card,
+.requirements-card,
+.notifications-card,
+.tickets-card,
+.profile-main-card,
+.bottleneck-card,
+.cases-panel,
+.stalled-panel,
+.unit-twin,
+.floor-detail,
+.construction-updates,
+.construction-next-card {
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Global shells and navigation.                                               */
+/* -------------------------------------------------------------------------- */
+
+.sidebar {
+  width: 252px;
+  flex-basis: 252px;
+  background: #0a443c;
+  padding: 22px 16px 18px;
+  box-shadow: none;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 16px;
+  border: 0;
+  border-bottom: 1px solid rgba(255,255,255,.16);
+  border-radius: 0;
+  background: transparent;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+.brand-mark { width: 40px; height: 40px; }
+.brand-lockup strong { font-size: 22px; letter-spacing: -.4px; }
+.brand-lockup small { color: rgba(255,255,255,.68); font-size: 10px; }
+
+.nav-caption {
+  color: rgba(255,255,255,.58);
+  letter-spacing: 0;
+  font-size: 10px;
+  margin-bottom: 7px;
+}
+.side-nav { gap: 2px; }
+.nav-item {
+  min-height: 42px;
+  border-radius: var(--radius-control);
+  color: rgba(255,255,255,.78);
+  padding-inline: 10px;
+}
+.nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item.active {
+  background: #f6faf8;
+  color: var(--brand);
+  border-radius: var(--radius-control);
+  font-weight: 800;
+}
+
+.sidebar-bottom {
+  gap: 7px;
+  border-top-color: rgba(255,255,255,.14);
+}
+.role-switcher { color: rgba(255,255,255,.78); }
+.role-switcher > summary {
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: var(--radius-control);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.role-switcher > summary::-webkit-details-marker { display: none; }
+.role-switcher-menu { display: grid; gap: 2px; padding-top: 5px; }
+.role-switch { border-radius: var(--radius-control); }
+.role-switch.active { background: rgba(255,255,255,.1); color: #fff; }
+.prototype-tag {
+  margin: 0;
+  border: 0;
+  padding: 3px 0;
+  color: rgba(255,255,255,.54);
+  font-size: 9px;
+  border-radius: 0;
+}
+.logout-link { border-radius: var(--radius-control); }
+
+.topbar {
+  height: 66px;
+  background: #f7f9f8;
+  border-bottom: 1px solid var(--line);
+}
+.profile-chip,
+.menu-toggle {
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}
+
+.page-intro {
+  padding-top: 27px;
+  padding-bottom: 16px;
+}
+.page-intro h1 { font-size: clamp(24px, 2.6vw, 31px); letter-spacing: -.65px; }
+.page-subtitle { max-width: 720px; line-height: 1.8; }
+.eyebrow { letter-spacing: 0; font-size: 10px; }
+
+/* -------------------------------------------------------------------------- */
+/* User journey: one compact map, five distinct destinations.                  */
+/* -------------------------------------------------------------------------- */
+
+.journey-navigator {
+  margin-bottom: 15px;
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+}
+.journey-navigator-head { padding-bottom: 11px; gap: 16px; }
+.journey-kicker { color: var(--ink-3); font-size: 9px; }
+.journey-navigator-head strong { color: var(--ink); font-size: 13px; }
+.journey-navigator-head small { color: var(--ink-3); }
+.journey-progress-compact span { color: var(--brand); }
+.journey-progress-compact i { background: #e4ebe8; }
+.journey-progress-compact b { background: var(--brand); }
+.journey-stage-list {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding-top: 12px;
+}
+.journey-stage-node {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #f1f4f3;
+  color: #7b8e88;
+  border-color: var(--line);
+}
+.journey-stage-list li.done .journey-stage-node {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.journey-stage-list li.current .journey-stage-node {
+  background: #fff;
+  border: 2px solid var(--brand);
+  color: var(--brand);
+  box-shadow: none;
+}
+.journey-stage-list li.current .journey-stage-copy strong,
+.journey-stage-list li.current .journey-stage-copy small { color: var(--brand); }
+.journey-stage-list li.next { opacity: .58; }
+.journey-stage-connector { top: 11px; background: var(--line); }
+.journey-stage-list li.done .journey-stage-connector { background: #8db9ad; }
+
+.journey-continuation > a {
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}
+.journey-next-link { background: var(--brand); color: #fff; }
+.journey-next-link small { color: rgba(255,255,255,.72); }
+
+/* -------------------------------------------------------------------------- */
+/* Buttons and common surfaces.                                                */
+/* -------------------------------------------------------------------------- */
+
+.primary-btn,
+.secondary-btn,
+.program-select,
+.submit-ticket,
+.compact-btn,
+.unit-demo-toggle,
+.outline-icon,
+.component-pill,
+.notification-toolbar button,
+.profile-tabs button {
+  border-radius: var(--radius-control) !important;
+  box-shadow: none !important;
+}
+.primary-btn { background: var(--brand); border-color: var(--brand); }
+.primary-btn:hover { background: var(--brand-strong); }
+.secondary-btn { background: #fff; color: var(--brand); border-color: var(--line-strong); }
+
+.metric-card,
+.side-card,
+.requirements-card,
+.notifications-card,
+.tickets-card,
+.profile-main-card,
+.completion-card,
+.bottleneck-card,
+.impact-panel,
+.cases-panel,
+.stalled-panel,
+.stalled-card,
+.program-card,
+.next-action-card,
+.unit-twin,
+.ticket-form,
+.priority-panel,
+.application-review-card,
+.journey-empty-state,
+.maintenance-calendar {
+  border-radius: var(--radius-surface) !important;
+  border-color: var(--line) !important;
+  box-shadow: none !important;
+}
+
+/* Metrics are information, not decorative feature cards. */
+.metrics-section,
+.staff-metrics { gap: 8px; }
+.metrics-section .metric-card,
+.staff-metrics .metric-card {
+  border-radius: var(--radius-surface);
+  padding: 14px;
+  background: #fff;
+}
+.metrics-section .metric-card::after,
+.staff-metrics .metric-card::after { top: 11px; bottom: 11px; }
+.metric-card .metric-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin-bottom: 7px;
+}
+.metric-card strong { font-size: 20px; }
+
+/* -------------------------------------------------------------------------- */
+/* Home: replace the oversized decorative hero with a status summary.          */
+/* -------------------------------------------------------------------------- */
+
+.home-hero {
+  min-height: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--brand);
+  border-radius: var(--radius-surface);
+  background: #fff;
+  color: var(--ink);
+}
+.home-hero .eyebrow,
+.home-hero h2,
+.home-hero h2 span,
+.home-hero-copy > p,
+.hero-progress span,
+.hero-progress a,
+.hero-waypoint small,
+.hero-waypoint strong { color: var(--ink); }
+.home-hero h2 { font-size: clamp(23px, 2.7vw, 31px); }
+.home-hero h2 span { color: var(--brand); }
+.home-hero-copy > p { color: var(--ink-2); margin-bottom: 16px; }
+.hero-progress { max-width: 580px; }
+.progress-line { background: #dfe7e4; }
+.progress-line i { background: var(--brand); }
+.hero-progress a { color: var(--brand); }
+.hero-waypoint { margin-left: 0; }
+.hero-waypoint > span {
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-surface);
+  background: var(--surface-soft);
+  box-shadow: none;
+}
+.hero-waypoint i { box-shadow: none; }
+
+/* -------------------------------------------------------------------------- */
+/* AI: explain the capability, keep the visual treatment quiet.                */
+/* -------------------------------------------------------------------------- */
+
+.ai-badge {
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  margin-inline-start: 7px;
+}
+.ai-badge.ai { background: #edf5f2; color: #0b5f53; border-color: #c9ddd7; }
+.ai-badge.rules { background: #f2f4f3; color: #5e716c; border-color: #dce3e0; }
+.ai-badge.loading { background: #faf4e8; color: #775519; border-color: #e9dcc0; }
+
+.ai-decision-notice {
+  border: 0;
+  border-inline-start: 3px solid var(--brand);
+  border-radius: 0;
+  background: #eef4f2;
+  color: var(--ink-2);
+}
+.ai-factors li,
+.ai-waiting-on,
+.stalled-action { border-radius: var(--radius-control); }
+
+.unified-next-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 17px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--brand);
+  border-radius: var(--radius-surface);
+}
+.unified-next-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-control);
+  background: var(--surface-brand);
+  color: var(--brand);
+}
+.unified-next-copy .eyebrow,
+.unified-next-copy h2,
+.unified-next-copy p { color: var(--ink); }
+.unified-next-copy p { color: var(--ink-2); }
+.unified-next-meta span { background: var(--surface-soft); color: var(--ink-2); }
+.unified-next-action .primary-btn { background: var(--brand); color: #fff; }
+.ai-waiting-on { background: var(--surface-brand); color: var(--brand); border-color: #cadfd8; }
+
+/* -------------------------------------------------------------------------- */
+/* Start and program selection: task flow, not landing-page composition.       */
+/* -------------------------------------------------------------------------- */
+
+.journey-start-layout { gap: 12px; grid-template-columns: minmax(0,1.15fr) minmax(300px,.85fr); }
+.journey-start-form,
+.journey-start-result {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  box-shadow: none;
+}
+.journey-start-form { padding: 23px; }
+.journey-start-result {
+  padding: 23px;
+  background: #eef4f2;
+  color: var(--ink);
+}
+.journey-start-result h2 { font-size: 22px; }
+.result-orbit {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-control);
+  background: #dcebe6;
+  color: var(--brand);
+  margin-bottom: 16px;
+}
+.result-route span {
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--brand-line);
+  color: var(--brand);
+}
+.completion-pill { border-radius: var(--radius-control); }
+.onboarding-fields select,
+.onboarding-fields input { border-radius: var(--radius-control); background: #fff; }
+
+.program-list {
+  display: grid;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  overflow: hidden;
+  background: #fff;
+}
+.program-card {
+  border: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  background: #fff !important;
+  transform: none !important;
+}
+.program-card:last-child { border-bottom: 0 !important; }
+.program-card.selected {
+  background: #f2f7f5 !important;
+  box-shadow: inset 3px 0 0 var(--brand) !important;
+}
+.program-index { color: #8a9995; }
+.program-select { border-color: var(--brand-line); background: #fff; color: var(--brand); }
+.program-select.active { background: var(--brand); color: #fff; }
+
+/* -------------------------------------------------------------------------- */
+/* Association workspace: operational tables first, decorative cards second.  */
+/* -------------------------------------------------------------------------- */
+
+.stalled-panel { padding: 15px; background: #fff; }
+.stalled-list { gap: 8px; }
+.stalled-card { background: #fff; padding: 12px; }
+.stalled-card:hover,
+.stalled-card:focus-visible { transform: none; box-shadow: none; border-color: var(--line-strong) !important; }
+.stalled-card.urgent { border-inline-start: 3px solid #a84837 !important; }
+.stalled-card.watch { border-inline-start: 3px solid #a57726 !important; }
+
+/* -------------------------------------------------------------------------- */
+/* Digital twin workspace — stable shell ready for future R3F/Three.js.        */
+/* -------------------------------------------------------------------------- */
+
+.twin-workspace { margin-top: 16px; }
+.twin-workspace-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+.twin-workspace-header h2 { margin: 3px 0 5px; font-size: 21px; color: var(--ink); }
+.twin-workspace-header > div:first-child > p:last-child { margin: 0; color: var(--ink-3); font-size: 11px; line-height: 1.8; }
+.twin-overall-progress {
+  width: min(280px, 35%);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+}
+.twin-overall-progress span,
+.twin-overall-progress small { color: var(--ink-3); font-size: 9px; }
+.twin-overall-progress strong { color: var(--brand); font-size: 20px; }
+.twin-overall-progress i {
+  grid-column: 1 / -1;
+  height: 5px;
+  background: #dde6e2;
+  overflow: hidden;
+}
+.twin-overall-progress b { display: block; height: 100%; background: var(--brand); }
+.twin-overall-progress small { grid-column: 1 / -1; }
+
+.twin-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid #a97a26;
+  background: #faf6ed;
+  color: #66532f;
+  font-size: 9px;
+  line-height: 1.7;
+}
+.twin-disclaimer svg { flex: none; margin-top: 1px; }
+
+.twin-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 10px;
+  align-items: stretch;
+}
+.twin-viewport-panel,
+.twin-inspector,
+.construction-updates,
+.construction-next-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-surface);
+  background: #fff;
+  box-shadow: none;
+}
+.twin-viewport-panel { overflow: hidden; }
+.twin-viewport-toolbar,
+.twin-viewport-footer {
+  min-height: 44px;
+  padding: 8px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.twin-viewport-toolbar > div { display: flex; align-items: baseline; gap: 8px; }
+.twin-viewport-toolbar strong { color: var(--ink); font-size: 11px; }
+.twin-viewport-toolbar span,
+.twin-renderer-label,
+.twin-control-hint { color: var(--ink-3); font-size: 9px; }
+.twin-renderer-label {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 3px 6px;
+  background: var(--surface-soft);
+}
+.twin-render-surface {
+  min-height: 470px;
+  position: relative;
+  overflow: hidden;
+  background: #eef2f0;
+}
+.twin-render-surface .building-model-stage {
+  min-height: 470px;
+  height: 470px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.twin-viewport-footer { border-top: 1px solid var(--line); border-bottom: 0; }
+.building-3d-controls { display: flex; gap: 4px; }
+.building-3d-controls button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--brand);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+}
+.building-legend {
+  display: flex;
+  gap: 14px;
+  padding: 8px 11px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-3);
+  font-size: 9px;
+}
+
+.twin-inspector { padding: 16px; }
+.floor-detail { border-radius: var(--radius-surface); }
+.floor-progress-large { margin-top: 16px; }
+.floor-work-groups { gap: 11px; }
+.work-chip { border-radius: 3px !important; }
+
+.construction-lower-grid { gap: 10px; margin-top: 10px; }
+.construction-updates,
+.construction-next-card { padding: 16px; }
+.construction-next-card { border-inline-start: 3px solid var(--brand); }
+.construction-next-card .next-symbol { display: none; }
+
+.unit-overview {
+  background: #fff !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-surface) !important;
+  box-shadow: none !important;
+}
+.unit-overview h2,
+.unit-overview span { color: var(--ink) !important; }
+.unit-demo-toggle {
+  background: #fff;
+  color: var(--brand);
+  border-color: var(--line-strong);
+}
+.unit-visual { background: #eef2f0 !important; }
+.unit-health { border: 1px solid var(--line); background: #fff; box-shadow: none; backdrop-filter: none; }
+
+/* -------------------------------------------------------------------------- */
+/* Onboarding: retain identity but remove generated-landing-page effects.      */
+/* -------------------------------------------------------------------------- */
+
+.onboarding-page { background: var(--canvas); }
+.onboarding-stage { gap: clamp(28px, 5vw, 58px); }
+.onboarding-art {
+  border-radius: var(--radius-dialog);
+  background: #0b4f46;
+  box-shadow: none;
+}
+.onboarding-glow { display: none; }
+.onboarding-icon {
+  border-radius: var(--radius-surface);
+  box-shadow: none;
+  background: #d7a149;
+}
+.onboarding-copy h1 { font-size: clamp(34px, 4vw, 45px); letter-spacing: -.8px; }
+.onboarding-brand img { border-radius: 0; }
+
+/* -------------------------------------------------------------------------- */
+/* Mobile.                                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .sidebar { width: 268px; flex-basis: 268px; }
+  .twin-workspace-grid { grid-template-columns: 1fr; }
+  .twin-inspector { order: 2; }
+  .twin-overall-progress { width: 240px; }
+}
+
+@media (max-width: 760px) {
+  .topbar { height: 60px; }
+  .mobile-bottom-nav { background: #fff; border-top-color: var(--line); }
+  .mobile-nav-item.active svg { border-radius: var(--radius-control); }
+  .journey-stage-list { display: grid; grid-template-columns: repeat(5, minmax(76px, 1fr)); overflow-x: auto; }
+  .journey-stage-list li { min-width: 76px; }
+  .home-hero { display: grid; gap: 15px; padding: 17px; }
+  .hero-waypoint { justify-self: start; }
+  .twin-workspace-header { display: grid; }
+  .twin-overall-progress { width: 100%; }
+  .twin-render-surface,
+  .twin-render-surface .building-model-stage { min-height: 390px; height: 390px; }
+  .twin-viewport-footer { align-items: flex-start; flex-direction: column; }
+  .journey-start-result { min-height: 0; }
+}
+
+@media (max-width: 560px) {
+  .journey-navigator { margin-inline: 12px; }
+  .journey-stage-copy small { display: none; }
+  .journey-stage-copy strong { font-size: 8px; }
+  .metrics-section .metric-card,
+  .staff-metrics .metric-card { border-radius: var(--radius-surface); }
+  .twin-render-surface,
+  .twin-render-surface .building-model-stage { min-height: 340px; height: 340px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
