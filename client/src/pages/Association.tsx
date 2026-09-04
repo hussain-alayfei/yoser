@@ -45,6 +45,8 @@ function StalledCasesPanel() {
       if (item.daysInStage > associationDemoThresholds.maxStageDays) signals.push(`بقي الطلب ${item.daysInStage} يومًا في مرحلة «${item.stage}» والحدّ المعتاد ${associationDemoThresholds.maxStageDays} يومًا`);
       if (item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push(`لا يوجد تحديث منذ ${item.daysSinceUpdate} يومًا`);
       if (item.requirement === "مكتمل" && item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push("المتطلبات مكتملة لكن الطلب لم يتحرك");
+      if (item.reassignments > 1) signals.push(`تم تحويل الحالة ${item.reassignments} مرات بين الجهات دون تقدّم`);
+      if (item.beneficiaryContacts > 1) signals.push(`تواصل المستفيد ${item.beneficiaryContacts} مرات ولم يتحرك الطلب`);
 
       return {
         id: item.id,
@@ -69,9 +71,8 @@ function StalledCasesPanel() {
       requirement: item.requirement,
       owner: item.owner,
       lastAction: item.lastAction,
-      // مشتقّة من سجل الحالة: كل تحويل أو تواصل مسجّل يظهر كقيد في التاريخ.
-      reassignments: item.history.filter((h) => h.title.includes("تحويل") || h.title.includes("إحالة")).length,
-      beneficiaryContacts: item.history.filter((h) => h.title.includes("تواصل") || h.title.includes("استفسار")).length,
+      reassignments: item.reassignments,
+      beneficiaryContacts: item.beneficiaryContacts,
     })),
   }), []);
 
