@@ -46,32 +46,48 @@ function AiNextAction({ icon, eyebrow, context, handover = false, className = ""
     source: "rules",
   }), [rule.key, rule.title, rule.description, rule.href, rule.label]);
 
+  // الموضع الحقيقي للمستفيد في الرحلة. كانت هذه القيم ثوابت وقت ترجمة —
+  // المرحلة «التخصيص» ورقمها ٥ دائمًا — فكان النموذج يوصي وهو لا يعرف أين
+  // يقف المستفيد فعلًا. قبل إنشاء الطلب نشتقّها من تقدّمه المحفوظ.
+  const position = useMemo(() => {
+    if (hasApplication) return { stage: beneficiary.applicationStage, number: beneficiary.applicationStageNumber, owner: "الجهة المختصة" as const };
+    if (selectedProgram) return { stage: "مراجعة الطلب قبل التقديم", number: 3, owner: "المستفيد" as const };
+    if (hasProfile) return { stage: "معرفة الخيارات المتاحة", number: 2, owner: "المستفيد" as const };
+    return { stage: "تعبئة البيانات", number: 1, owner: "المستفيد" as const };
+  }, [hasApplication, hasProfile, selectedProgram]);
+
   const request = useMemo<NextStepRequest>(() => ({
-    stage: beneficiary.applicationStage,
-    stageNumber: beneficiary.applicationStageNumber,
+    stage: position.stage,
+    stageNumber: position.number,
     totalStages: beneficiary.totalStages,
-    documents: requirements.map((item) => ({ name: item.name, status: item.status })),
-    lastAction: stages.filter((s) => s.status === "مكتمل").slice(-1)[0]?.title ?? "تقديم الطلب",
-    daysSinceUpdate: 12,
-    owner: handover ? "مقدم الخدمة" : "الجهة المختصة",
+    // قبل إنشاء الطلب لا توجد مستندات مرفوعة أصلًا، فإرسال قائمة المتطلبات
+    // كأنها حالة قائمة يجعل النموذج يوصي بتحديث مستند لم يُطلب بعد.
+    documents: hasApplication ? requirements.map((item) => ({ name: item.name, status: item.status })) : [],
+    lastAction: hasApplication
+      ? stages.filter((s) => s.status === "مكتمل").slice(-1)[0]?.title ?? "تقديم الطلب"
+      : selectedProgram ? `اختيار برنامج ${selectedProgram}` : hasProfile ? "تعبئة البيانات السكنية" : "لم يبدأ بعد",
+    daysSinceUpdate: hasApplication ? 12 : 0,
+    owner: handover ? "مقدم الخدمة" : position.owner,
     hasProfile: hasProfile || hasApplication,
     selectedProgram,
     hasApplication,
     context,
     handover,
-  }), [context, handover, hasApplication, hasProfile, selectedProgram]);
+  }), [context, handover, hasApplication, hasProfile, position, selectedProgram]);
 
-  const { data, loading } = useNextStep(request, fallback);
+  const { data, loading, notConfigured } = useNextStep(request, fallback);
 
-  return <section className={`unified-next-action ${className}`}>
+  return <section className={`unified-next-action ${className} ${data.actionRequired ? "" : "no-action"}`}>
     <div className="unified-next-icon">{icon}</div>
     <div className="unified-next-copy">
-      <p className="eyebrow">{eyebrow}<AiBadge source={data.source} loading={loading} /></p>
+      <p className="eyebrow">{eyebrow}<AiBadge source={data.source} loading={loading} notConfigured={notConfigured} /></p>
       <h2>{data.title}</h2>
       <p>{data.description}</p>
       {!data.actionRequired && <p className="ai-waiting-on"><Clock3 size={14} />لا يلزمك إجراء الآن · الطلب لدى {data.waitingOn}</p>}
     </div>
-    <Link className="primary-btn" href={data.href}>{data.label} <ArrowLeft size={16} /></Link>
+    {/* حين لا يُطلب إجراء، الزر يصبح رابط متابعة ثانويًا: زرّ رئيسي بارز
+        يناقض نصًّا يقول «لا يلزمك إجراء الآن» ويدفع المستفيد لفعل شيء بلا داعٍ. */}
+    <Link className={data.actionRequired ? "primary-btn" : "secondary-btn"} href={data.href}>{data.actionRequired ? data.label : "عرض الحالة"} <ArrowLeft size={16} /></Link>
   </section>;
 }
 
@@ -92,10 +108,10 @@ export function JourneyStartPage() {
 export function HomePage() {
   const [, navigate] = useLocation();
   const hasApplication = getApplicationCreated();
-  if (!hasApplication) return <AppShell journeyStep={0} hideJourneyContinuation eyebrow="ابدأ من هنا" title="مساء الخير، أحمد" subtitle="لم تنشئ طلبًا بعد. ابدأ ببيانات قصيرة ثم اعرف البرامج التي قد تناسبك."><section className="journey-empty-state"><div className="journey-empty-symbol"><Compass size={27} /></div><div><p className="eyebrow">لا يوجد طلب نشط</p><h2>ابدأ رحلتك بخطوة واحدة واضحة</h2><p>سنحفظ تقدمك بين الصفحات: بياناتك أولًا، ثم الترشيح، وبعد مراجعتك فقط يتم إنشاء الطلب.</p></div><button className="primary-btn" onClick={() => navigate("/start")}>تعبئة بياناتي <ArrowLeft size={17} /></button></section><section className="metrics-section journey-preview-metrics"><MetricCard label="الخطوة الأولى" value="بياناتك" detail="أقل من دقيقتين" icon={<FileCheck2 size={18} />} tone="green" onClick={() => navigate("/start")} /><MetricCard label="بعدها مباشرة" value="الترشيح" detail="نتيجة إرشادية" icon={<Sparkles size={18} />} tone="mint" onClick={() => navigate("/start")} /><MetricCard label="أنت تقرر" value="إنشاء الطلب" detail="بعد المراجعة" icon={<FileText size={18} />} tone="stone" onClick={() => navigate("/start")} /></section></AppShell>;
+  if (!hasApplication) return <AppShell journeyStep={0} hideJourneyContinuation eyebrow="ابدأ من هنا" title="مساء الخير، أحمد" subtitle="لم تنشئ طلبًا بعد. ابدأ ببيانات قصيرة ثم اعرف البرامج التي قد تناسبك."><AiNextAction icon={<Compass size={21} />} eyebrow="خطوتك التالية" context="journey" /><section className="journey-empty-state"><div className="journey-empty-symbol"><Compass size={27} /></div><div><p className="eyebrow">لا يوجد طلب نشط</p><h2>ابدأ رحلتك بخطوة واحدة واضحة</h2><p>سنحفظ تقدمك بين الصفحات: بياناتك أولًا، ثم الترشيح، وبعد مراجعتك فقط يتم إنشاء الطلب.</p></div><button className="primary-btn" onClick={() => navigate("/start")}>تعبئة بياناتي <ArrowLeft size={17} /></button></section><section className="metrics-section journey-preview-metrics"><MetricCard label="الخطوة الأولى" value="بياناتك" detail="أقل من دقيقتين" icon={<FileCheck2 size={18} />} tone="green" onClick={() => navigate("/start")} /><MetricCard label="بعدها مباشرة" value="الترشيح" detail="نتيجة إرشادية" icon={<Sparkles size={18} />} tone="mint" onClick={() => navigate("/start")} /><MetricCard label="أنت تقرر" value="إنشاء الطلب" detail="بعد المراجعة" icon={<FileText size={18} />} tone="stone" onClick={() => navigate("/start")} /></section></AppShell>;
   return <AppShell journeyStep={3} eyebrow="ملخص رحلتك" title="مساء الخير، أحمد" subtitle="طلبك في مرحلة التخصيص. هنا ترى الحالة والسبب والموعد وما يلزمك الآن.">
     <section className="home-hero connected-home-hero"><div className="home-hero-copy"><p className="eyebrow">الحالة الآن</p><h2>جاري <span>تخصيص المسكن</span></h2><p>تراجع الجمعية الخيارات المتاحة لمطابقة وحدة مناسبة لحالتك. لا يوجد قرار مطلوب منك في هذه اللحظة.</p><div className="hero-progress"><div><strong>4</strong><span>من 7 مراحل مكتملة</span></div><div className="progress-line"><i style={{ width: "57%" }} /></div><Link href="/application">كل تفاصيل المرحلة <ChevronLeft size={17} /></Link></div></div><div className="hero-waypoint"><span>04</span><div><i /><small>الانتقال المتوقع</small><strong>10 سبتمبر</strong></div></div></section>
-    <section className="unified-next-action"><div className="unified-next-icon"><Upload size={21} /></div><div className="unified-next-copy"><p className="eyebrow">الإجراء المطلوب منك</p><h2>تحديث إثبات السكن</h2><p>هذا هو الإجراء الوحيد الذي يؤثر على سرعة انتقال الطلب إلى الخطوة التالية.</p><div className="unified-next-meta"><span>المدة: دقيقتان</span><span>آخر موعد: 24 أغسطس</span><span>بعده: استكمال التخصيص</span></div></div><Link href="/requirements" className="primary-btn">رفع المستند <ArrowLeft size={16} /></Link></section>
+    <AiNextAction icon={<Upload size={21} />} eyebrow="الإجراء المطلوب منك" context="journey" />
     <section className="metrics-section"><MetricCard label="اكتمال الملف" value="86%" detail="متطلب واحد متبقٍ" icon={<FileCheck2 size={18} />} tone="green" onClick={() => navigate("/requirements")} /><MetricCard label="مرحلة الطلب" value="04 / 07" detail="التخصيص" icon={<ClipboardList size={18} />} tone="mint" onClick={() => navigate("/application")} /><MetricCard label="موعد تقريبي" value="10 سبتمبر" detail="الانتقال المتوقع" icon={<CalendarClock size={18} />} tone="orange" onClick={() => navigate("/application")} /><MetricCard label="آخر تحديث" value="اليوم" detail="10:45 ص" icon={<Clock3 size={18} />} tone="stone" onClick={() => navigate("/notifications")} /></section>
     <div className="home-layout"><div className="home-main"><JourneyTimeline /></div><aside className="home-side"><section className="side-card"><div className="side-card-heading"><div><p className="eyebrow">آخر التحديثات</p><h2>ما الذي تغيّر؟</h2></div><Link href="/notifications" className="icon-link" aria-label="كل التحديثات"><ChevronLeft size={19} /></Link></div><UpdatesList limit={2} /></section><section className="side-card home-shortcuts"><p className="eyebrow">اختصارات مرتبطة بمرحلتك</p><Link href="/application">تفاصيل الطلب <ChevronLeft size={15} /></Link><Link href="/requirements">المتطلبات <ChevronLeft size={15} /></Link><Link href="/unit">معاينة متابعة البناء <ChevronLeft size={15} /></Link></section></aside></div>
   </AppShell>;
@@ -112,6 +128,7 @@ export function ProfilePage() {
 
 export function ProgramsPage() {
   const [, navigate] = useLocation();
+  const hasApplication = getApplicationCreated();
   const profile = useMemo(() => { try { return JSON.parse(sessionStorage.getItem("sakan-profile") ?? "null") as { city?: string; family?: string; housing?: string; income?: string } | null; } catch { return null; } }, []);
   const [selectedProgram, setSelectedProgram] = useState(() => { try { return sessionStorage.getItem("yusr-selected-program") ?? ""; } catch { return ""; } });
   const strongMatch = profile?.housing === "إيجار" && Number(profile?.income ?? 0) >= 3000;
@@ -134,17 +151,21 @@ export function ProgramsPage() {
     familyMembers: Number(profile.family ?? beneficiary.familyMembers) || beneficiary.familyMembers,
     housingStatus: profile.housing ?? beneficiary.housingStatus,
     monthlyIncome: Number(profile.income ?? beneficiary.monthlyIncome) || beneficiary.monthlyIncome,
-    monthlySupport: beneficiary.monthlySupport,
-    monthlyExpenses: beneficiary.monthlyExpenses,
-    socialResearchStatus: beneficiary.socialResearchStatus,
+    // نموذج /start يجمع المدينة وحجم الأسرة والوضع السكني والدخل فقط.
+    // كانت هذه الثلاثة تُرسَل من سجل العرض التجريبي كأنها بيانات المستخدم،
+    // فيبني النموذج ترشيحه على أرقام ليست له. نرسلها الآن كغير متوفرة
+    // ليقول عنها «يحتاج تحقق إضافي» بدل أن يجزم بناءً على بيانات مفترضة.
+    monthlySupport: hasApplication ? beneficiary.monthlySupport : 0,
+    monthlyExpenses: hasApplication ? beneficiary.monthlyExpenses : 0,
+    socialResearchStatus: hasApplication ? beneficiary.socialResearchStatus : "غير متوفر",
     programs: programs.map((program) => ({ name: program.name, description: program.description })),
-  } : null, [profile]);
+  } : null, [hasApplication, profile]);
 
-  const { data: aiResult, loading: aiLoading } = useProgramRecommendations(aiInput, ruleRecommendations);
+  const { data: aiResult, loading: aiLoading, notConfigured: aiUnset } = useProgramRecommendations(aiInput, ruleRecommendations);
   const cards = aiResult.recommendations.map((item) => ({ ...item, tone: PROGRAM_TONE[item.suitability] }));
   if (!profile) return <AppShell journeyStep={1} hideJourneyContinuation eyebrow="الخطوة 02 · معرفة الخيارات" title="أكمل بياناتك أولًا" subtitle="لا يمكن تقديم ترشيح واضح دون معرفة وضعك السكني الأساسي."><section className="journey-empty-state"><div className="journey-empty-symbol"><FileText size={25} /></div><div><p className="eyebrow">الخطوة السابقة غير مكتملة</p><h2>نحتاج بياناتك لعرض برامج مناسبة</h2><p>أكمل المدينة وحجم الأسرة والوضع السكني والدخل، ثم ستعود هنا تلقائيًا لرؤية الخيارات.</p></div><button className="primary-btn" onClick={() => navigate("/start")}>إكمال البيانات <ArrowLeft size={16} /></button></section></AppShell>;
   return <AppShell journeyStep={1} hideJourneyContinuation eyebrow="الخطوة 02 · معرفة الخيارات" title="البرامج التي قد تناسبك" subtitle={profile ? `النتيجة مبنية على بياناتك: ${profile.city} · ${profile.housing} · ${profile.family} أفراد` : "أكمل بياناتك أولًا لتحصل على مطابقة إرشادية أدق."}>
-    <div className="program-choice-head"><div><p className="eyebrow">اختر برنامجًا للمتابعة</p><h2>يمكنك مراجعة الخيارات قبل تقديم الطلب</h2></div><div className="program-choice-meta"><AiBadge source={aiResult.source} loading={aiLoading} /><span>{selectedProgram ? "تم اختيار برنامج" : "لم تختر بعد"}</span></div></div>
+    <div className="program-choice-head"><div><p className="eyebrow">اختر برنامجًا للمتابعة</p><h2>يمكنك مراجعة الخيارات قبل تقديم الطلب</h2></div><div className="program-choice-meta"><AiBadge source={aiResult.source} loading={aiLoading} notConfigured={aiUnset} /><span>{selectedProgram ? "تم اختيار برنامج" : "لم تختر بعد"}</span></div></div>
     <AiDecisionNotice text={aiResult.disclaimer ?? AI_DISCLAIMER} />
     <section className="program-list" role="radiogroup" aria-label="البرامج المرشحة">{cards.map((program, i) => <article className={`program-card ${program.tone} ${selectedProgram === program.name ? "selected" : ""}`} key={program.name}><div className="program-index">0{i + 1}</div><div className="program-content"><div><p className="eyebrow">حل سكني محتمل</p><h2>{program.name}</h2></div><StatusBadge tone={program.tone as "success" | "warning" | "muted"}>{program.suitability}</StatusBadge><p>{program.explanation}</p><AiFactors factors={program.factors} /><div className="program-card-actions"><button className="text-link" onClick={() => toast(program.factors.length ? `بُني هذا الترشيح على: ${program.factors.join("، ")}.` : "ظهر هذا البرنامج بناءً على المدينة وحجم الأسرة والوضع السكني والدخل المدخل.")}>لماذا ظهر؟ <CircleHelp size={15} /></button><button className={`program-select ${selectedProgram === program.name ? "active" : ""}`} role="radio" aria-checked={selectedProgram === program.name} onClick={() => { setSelectedProgram(program.name); try { sessionStorage.setItem("yusr-selected-program", program.name); } catch { /* اختياري */ } }}>{selectedProgram === program.name ? <><Check size={15} /> تم الاختيار</> : "اختيار البرنامج"}</button></div></div></article>)}</section>
     <section className="unified-next-action"><div className="unified-next-icon"><FileCheck2 size={21} /></div><div className="unified-next-copy"><p className="eyebrow">الخطوة التالية</p><h2>{selectedProgram ? `راجع طلب ${selectedProgram}` : "اختر برنامجًا للمتابعة"}</h2><p>{selectedProgram ? "سننقل اختيارك وبياناتك إلى ملخص واحد قبل التقديم النهائي." : "اختيارك هنا لا يرسل طلبًا؛ ستراجع كل البيانات في الصفحة التالية."}</p><div className="unified-next-meta"><Link href="/start">تعديل بياناتي</Link></div></div><button className="primary-btn" disabled={!selectedProgram} onClick={() => navigate("/application")}>مراجعة وتقديم الطلب <ArrowLeft size={17} /></button></section><PrototypeNote />

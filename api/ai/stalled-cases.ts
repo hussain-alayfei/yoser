@@ -70,8 +70,9 @@ function detectSignals(item: StalledCaseInput, t: StallThresholds): string[] {
   if (item.requirement === "مكتمل" && item.daysSinceUpdate > t.maxDaysWithoutUpdate) {
     signals.push("المتطلبات مكتملة لكن الطلب لم يتحرك");
   }
-  if (item.requirement !== "مكتمل") {
-    signals.push(`متطلب غير مكتمل (${item.requirement}) يمنع تقدّم الطلب`);
+  // «ناقص» وحدها تمنع التقدّم؛ «قيد المراجعة» حالة طبيعية بعد رفع المستند.
+  if (item.requirement === "ناقص") {
+    signals.push("متطلب ناقص يمنع تقدّم الطلب");
   }
   if (item.reassignments > 1) {
     signals.push(`تم تحويل الحالة ${item.reassignments} مرات بين الجهات`);
@@ -83,7 +84,10 @@ function detectSignals(item: StalledCaseInput, t: StallThresholds): string[] {
   return signals;
 }
 
-/** تصنيف احتياطي بالقواعد وحدها، يُستخدم إن تعذّر النموذج. */
+/**
+ * تصنيف بالقواعد وحدها. يُستخدم لسدّ أي حالة أغفلها النموذج في ردّه،
+ * فلا تختفي حالة أُرسلت للتقييم لمجرّد أن النموذج لم يذكرها.
+ */
 function ruleSeverity(signals: string[]): StallSeverity {
   if (signals.length >= 3) return "تحتاج تدخل";
   if (signals.length >= 1) return "تحتاج متابعة";
@@ -122,10 +126,27 @@ ${enriched
 
       // الإشارات تأتي من الحساب العددي، لا من النموذج.
       const byId = new Map(enriched.map(e => [e.case.id, e.signals]));
-      const findings: StalledCaseFinding[] = result.findings.map(f => ({
+
+      // نقبل فقط المعرّفات التي أُرسلت فعلًا؛ النموذج قد يخترع معرّفًا.
+      const returned = result.findings.filter(f => byId.has(f.id));
+      const findings: StalledCaseFinding[] = returned.map(f => ({
         ...f,
         signals: byId.get(f.id) ?? [],
       }));
+
+      // أي حالة أغفلها النموذج تُستكمل بالقواعد بدل أن تسقط من اللوحة صامتة.
+      const covered = new Set(returned.map(f => f.id));
+      for (const e of enriched) {
+        if (covered.has(e.case.id)) continue;
+        findings.push({
+          id: e.case.id,
+          needsFollowUp: e.signals.length > 0,
+          severity: ruleSeverity(e.signals),
+          signals: e.signals,
+          summary: e.signals.length ? e.signals[0] : "تسير الحالة ضمن المدد المتوقعة.",
+          recommendedAction: "مراجعة الحالة يدويًا — لم يشملها التقييم الآلي.",
+        });
+      }
 
       return json({ findings, source: "ai" } satisfies StalledCasesResult);
     });

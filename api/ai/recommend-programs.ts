@@ -66,23 +66,28 @@ const SYSTEM = `أنت مساعد ترشيح داخل منصّة إسكان سع
 - رتّب النتائج من الأنسب إلى الأقل مناسبة.`;
 
 function buildUser(input: ProgramRecommendInput): string {
-  const net = input.monthlyIncome + input.monthlySupport - input.monthlyExpenses;
   const list = input.programs.map((p, i) => `${i + 1}. ${p.name} — ${p.description}`).join("\n");
+
+  // صفر ⇒ الحقل لم يُجمع من المستفيد بعد. نقولها صراحةً بدل تمرير رقم
+  // يبدو حقيقيًا، حتى لا يُبنى الترشيح على بيانات غير موجودة.
+  const riyal = (value: number) => (value > 0 ? `${value} ريال` : "غير متوفر — لم يُجمع بعد");
+  const known = input.monthlySupport > 0 && input.monthlyExpenses > 0;
+  const net = input.monthlyIncome + input.monthlySupport - input.monthlyExpenses;
 
   return `ملف المستفيد:
 - المدينة: ${input.city}
 - عدد أفراد الأسرة: ${input.familyMembers}
 - الوضع السكني الحالي: ${input.housingStatus}
-- الدخل الشهري: ${input.monthlyIncome} ريال
-- الدعم الشهري: ${input.monthlySupport} ريال
-- المصروفات الشهرية: ${input.monthlyExpenses} ريال
-- الفائض الشهري التقريبي: ${net} ريال
+- الدخل الشهري: ${riyal(input.monthlyIncome)}
+- الدعم الشهري: ${riyal(input.monthlySupport)}
+- المصروفات الشهرية: ${riyal(input.monthlyExpenses)}
+- الفائض الشهري التقريبي: ${known ? `${net} ريال` : "غير محسوب — تنقص بيانات الدعم أو المصروفات"}
 - حالة البحث الاجتماعي: ${input.socialResearchStatus}
 
 البرامج المتاحة:
 ${list}
 
-أعطِ ترشيحًا وتفسيرًا لكل برنامج.`;
+أعطِ ترشيحًا وتفسيرًا لكل برنامج. لأي بيان مكتوب أنه «غير متوفر» لا تفترض قيمة له، واذكره صراحةً كسبب لطلب تحقق إضافي.`;
 }
 
 /**

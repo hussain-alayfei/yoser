@@ -6,12 +6,22 @@ import type { AiSource } from "@shared/ai";
  * شارة تُظهر مصدر النتيجة.
  * الشفافية مقصودة: المستخدم يعرف متى قرأ تحليلًا ذكيًا ومتى قرأ قاعدة ثابتة.
  */
-export function AiBadge({ source, loading }: { source: AiSource; loading?: boolean }) {
+export function AiBadge({ source, loading, notConfigured }: { source: AiSource; loading?: boolean; notConfigured?: boolean }) {
   if (loading) {
     return (
       <span className="ai-badge loading">
         <Loader2 size={13} className="ai-spin" />
         جارٍ التحليل
+      </span>
+    );
+  }
+  // تمييز «المفتاح غير مُهيّأ» عن «فشل الاتصال»: كلاهما يسقط إلى القواعد،
+  // لكن الأول إعداد ناقص والثاني عطل، ولا يُعالجان بنفس الطريقة.
+  if (notConfigured) {
+    return (
+      <span className="ai-badge rules" title="لم يُضف مفتاح الوصول للنموذج بعد؛ النتائج محسوبة بالقواعد.">
+        <ShieldCheck size={13} />
+        قواعد أساسية · التحليل الذكي غير مُفعّل
       </span>
     );
   }

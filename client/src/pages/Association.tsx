@@ -41,7 +41,9 @@ function StalledCasesPanel() {
       // item.alert عند غياب أي إشارة، فتظهر رسالة مثل «جميع المتطلبات مكتملة»
       // كأنها دليل على تعطّل الحالة، وهذا عكس المقصود.
       const signals: string[] = [];
-      if (item.requirement !== "مكتمل") signals.push(`متطلب غير مكتمل (${item.requirement}) يمنع تقدّم الطلب`);
+      // «ناقص» فقط يمنع التقدّم. «قيد المراجعة» هي الحالة الطبيعية مباشرة بعد
+      // رفع المستفيد للمستند، فعدّها تعطّلًا يُظهر حالات سليمة كأنها متوقفة.
+      if (item.requirement === "ناقص") signals.push("متطلب ناقص يمنع تقدّم الطلب");
       if (item.daysInStage > associationDemoThresholds.maxStageDays) signals.push(`بقي الطلب ${item.daysInStage} يومًا في مرحلة «${item.stage}» والحدّ المعتاد ${associationDemoThresholds.maxStageDays} يومًا`);
       if (item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push(`لا يوجد تحديث منذ ${item.daysSinceUpdate} يومًا`);
       if (item.requirement === "مكتمل" && item.daysSinceUpdate > associationDemoThresholds.maxDaysWithoutUpdate) signals.push("المتطلبات مكتملة لكن الطلب لم يتحرك");
@@ -76,14 +78,14 @@ function StalledCasesPanel() {
     })),
   }), []);
 
-  const { data, loading } = useStalledCases(request, ruleFindings);
+  const { data, loading, notConfigured } = useStalledCases(request, ruleFindings);
   const byId = new Map(associationCases.map((item) => [item.id, item]));
   const flagged = data.findings.filter((f) => f.needsFollowUp);
 
   return <section className="stalled-panel">
     <div className="association-section-heading">
       <div>
-        <p className="eyebrow">رصد استباقي<AiBadge source={data.source} loading={loading} /></p>
+        <p className="eyebrow">رصد استباقي<AiBadge source={data.source} loading={loading} notConfigured={notConfigured} /></p>
         <h2>حالات تبدو متوقفة</h2>
         <p>ظهرت هذه الحالات لأن سير الإجراء فيها توقّف، قبل أن يتواصل المستفيد.</p>
       </div>

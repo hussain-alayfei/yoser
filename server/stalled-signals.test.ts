@@ -15,7 +15,8 @@ import { associationCases, associationDemoThresholds as T } from "../client/src/
 /** نفس منطق الإشارات المستخدم في اللوحة وفي الخادم. */
 function signalsFor(item: (typeof associationCases)[number]): string[] {
   const signals: string[] = [];
-  if (item.requirement !== "مكتمل") signals.push("متطلب غير مكتمل");
+  // «ناقص» فقط تمنع التقدّم؛ «قيد المراجعة» حالة طبيعية بعد رفع المستند.
+  if (item.requirement === "ناقص") signals.push("متطلب ناقص");
   if (item.daysInStage > T.maxStageDays) signals.push("تجاوز مدة المرحلة");
   if (item.daysSinceUpdate > T.maxDaysWithoutUpdate) signals.push("لا يوجد تحديث");
   if (item.requirement === "مكتمل" && item.daysSinceUpdate > T.maxDaysWithoutUpdate) signals.push("مكتمل ولم يتحرك");
@@ -35,7 +36,7 @@ describe("إشارات الطلبات المتوقفة", () => {
   it("كل إشارة من الخمس تُطلق على حالة واحدة على الأقل", () => {
     const fired = new Set(associationCases.flatMap(signalsFor));
     // الإشارات الثلاث التي كانت تعمل أصلًا
-    expect(fired).toContain("متطلب غير مكتمل");
+    expect(fired).toContain("متطلب ناقص");
     expect(fired).toContain("تجاوز مدة المرحلة");
     expect(fired).toContain("لا يوجد تحديث");
     // الإشارتان اللتان كانتا شيفرة ميتة — هذا هو الحارس الفعلي
