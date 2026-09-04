@@ -98,7 +98,8 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
           {actions && <div className="page-actions">{actions}</div>}
         </section>}
         {variant === "association" ? <div className="journey-context association-context" aria-label="سياق الجمعية"><span>مساحة الجمعية</span><i /><strong>المتابعة الاستباقية</strong><small>الحالات المسندة للجمعية</small></div> : <JourneyNavigator currentStep={currentJourneyStep} />}
-        <div className="page-body">{children}</div>
+        {/* المفتاح على المسار يُعيد تركيب العنصر عند كل تنقّل، فتُشغَّل حركة الدخول من جديد. */}
+        <div className="page-body" key={location}>{children}</div>
         {variant === "beneficiary" && !hideJourneyContinuation && <JourneyContinuation currentStep={currentJourneyStep} />}
       </main>
       <nav className="mobile-bottom-nav" aria-label="التنقل السفلي">

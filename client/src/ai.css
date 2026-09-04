@@ -32,7 +32,7 @@
   padding: 11px 14px;
   background: #f6faf8;
   border: 1px solid #dbe9e4;
-  border-radius: 12px;
+  border-radius:14px;
   color: #46615a;
   font-size: 12px;
   line-height: 1.7;
@@ -52,7 +52,7 @@
   padding: 4px 10px;
   background: #f2f7f5;
   border: 1px solid #dfeae6;
-  border-radius: 8px;
+  border-radius:10px;
   font-size: 11px;
   color: #3f5a53;
 }
@@ -66,7 +66,7 @@
   padding: 6px 11px;
   background: #eef6f3;
   border: 1px solid #cfe5dd;
-  border-radius: 9px;
+  border-radius:10px;
   color: #0b6c5d;
   font-size: 12px;
   font-weight: 700;
@@ -88,7 +88,7 @@
   min-width: 42px;
   height: 42px;
   padding: 0 10px;
-  border-radius: 12px;
+  border-radius:14px;
   background: #fdf1e4;
   color: #a4671a;
   font-size: 18px;
@@ -109,7 +109,7 @@
   border: 1px solid #e3ebe8;
   background: #fbfdfc;
   cursor: pointer;
-  transition: border-color .16s, box-shadow .16s, transform .16s;
+  transition: border-color var(--dur-2), box-shadow var(--dur-2), transform var(--dur-2);
 }
 .stalled-card:hover,
 .stalled-card:focus-visible {
@@ -159,7 +159,7 @@
 .program-choice-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 @media (max-width: 720px) {
-  .stalled-panel { margin: 0 12px 14px; padding: 14px; border-radius: 15px; }
+  .stalled-panel { margin: 0 12px 14px; padding: 14px; border-radius:14px; }
   .stalled-list { grid-template-columns: 1fr; }
   .ai-decision-notice { margin: 0 12px 12px; }
 }

@@ -1,0 +1,48 @@
+/**
+ * الحركة بين الصفحات والتبويبات.
+ *
+ * المبدأ: حركة واحدة قصيرة وهادئة تشرح أن المحتوى تغيّر، لا أكثر.
+ * لا انزلاق أفقي — في واجهة RTL يوحي الاتجاه بمعنى «تقدّم» أو «رجوع»
+ * وقد يعاكس ما فعله المستخدم فعلًا، فالتلاشي الرأسي الخفيف أوضح وأصدق.
+ */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* الصفحة كاملة عند تغيّر المسار */
+.page-body {
+  animation: page-enter var(--dur-3) var(--ease-out) both;
+}
+
+/* رأس الصفحة يدخل معها بفارق بسيط جدًا، فيبدو الانتقال طبقة واحدة */
+.page-intro {
+  animation: page-enter var(--dur-3) var(--ease-out) both;
+  animation-delay: 30ms;
+}
+
+/* محتوى التبويب: أخف من الصفحة لأن الإطار حوله لم يتغيّر */
+.tab-panel {
+  animation: panel-enter var(--dur-2) var(--ease-out) both;
+}
+
+/*
+ * احترام تفضيل تقليل الحركة على مستوى النظام.
+ * نُبقي العنصر ظاهرًا بالكامل بدل إلغاء الأنيميشن فقط، وإلّا بقيت
+ * حالة both على الإطار الأول وظلّ المحتوى شفافًا.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .page-body,
+  .page-intro,
+  .tab-panel {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
