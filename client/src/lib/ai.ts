@@ -26,12 +26,35 @@ export type AiState<T> = {
   notConfigured: boolean;
 };
 
-async function postJson<TIn, TOut>(path: string, body: TIn, signal: AbortSignal): Promise<TOut> {
+/**
+ * ذاكرة نتائج داخل الجلسة، مفتاحها المسار + بصمة المدخلات.
+ *
+ * بدونها يُعاد سؤال النموذج عند كل دخول للصفحة — والتنقّل ذهابًا وإيابًا
+ * بين «مساري» و«مسكني» وحده كان يُطلق الطلب من جديد كل مرة. تُخزَّن الوعود
+ * لا النتائج، فيلتحق أي طلب متزامن بنفس الوعد بدل فتح نداء ثانٍ.
+ * أي إخفاق يُزال من الذاكرة فورًا حتى تبقى إعادة المحاولة ممكنة.
+ */
+const cache = new Map<string, Promise<unknown>>();
+
+function cachedPost<TIn, TOut>(path: string, body: TIn, cacheKey: string): Promise<TOut> {
+  const existing = cache.get(cacheKey);
+  if (existing) return existing as Promise<TOut>;
+
+  // لا نمرّر signal هنا: الوعد مشترك، وإلغاء أول مستهلك يجب ألّا يُسقط البقية.
+  const pending = postJson<TIn, TOut>(path, body).catch(error => {
+    cache.delete(cacheKey);
+    throw error;
+  });
+
+  cache.set(cacheKey, pending);
+  return pending as Promise<TOut>;
+}
+
+async function postJson<TIn, TOut>(path: string, body: TIn): Promise<TOut> {
   const response = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    signal,
   });
 
   if (!response.ok) {
@@ -73,16 +96,15 @@ function useAiResource<TIn, TOut>(
       return;
     }
 
-    const controller = new AbortController();
     let active = true;
     setLoading(true);
 
-    postJson<TIn, TOut>(path, input, controller.signal)
+    cachedPost<TIn, TOut>(path, input, `${path}::${key}`)
       .then(result => {
         if (active) setData(result);
       })
       .catch((error: Error & { notConfigured?: boolean }) => {
-        if (!active || error.name === "AbortError") return;
+        if (!active) return;
         // الفشل متوقّع قبل إضافة المفتاح: نبقى على نتيجة القواعد بهدوء.
         setData(fallbackRef.current);
         setNotConfigured(Boolean(error.notConfigured));
@@ -91,10 +113,9 @@ function useAiResource<TIn, TOut>(
         if (active) setLoading(false);
       });
 
-    return () => {
-      active = false;
-      controller.abort();
-    };
+    // نكتفي بعَلَم الإلغاء: الوعد مشترك في الذاكرة، فلا نُجهضه لأن مكوّنًا
+    // واحدًا خرج من الشجرة بينما قد ينتظره غيره.
+    return () => { active = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, key]);
 
