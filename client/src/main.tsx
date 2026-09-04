@@ -18,6 +18,7 @@ import "./responsive.css";
 import "./mobile-ios.css";
 // Dedicated WebGL digital-twin workspace styles are tightly scoped and load last.
 import "./digital-twin-3d.css";
+import "./digital-twin-loading.css";
 
 const queryClient = new QueryClient();
 
