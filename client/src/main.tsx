@@ -7,8 +7,11 @@ import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
-// آخر ملف في الحزمة عمدًا — طبقة الهوية يجب أن تأتي بعد كل ما سبقها.
+// Core visual tokens and flattening layer.
 import "./design.css";
+// Final product-quality overrides: accessibility, navigation clarity and a
+// quieter public-service visual language. Keep this import last.
+import "./product-polish.css";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +20,6 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
 
   startLogin();
@@ -45,19 +47,13 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       headers() {
-        // Preview auto-login fallback: when the browser blocks iframe cookies
-        // (Safari ITP / private browsing / WebView), the runtime mirrors the
-        // session into sessionStorage so we can forward it as a Bearer token.
-        // The regular OAuth cookie flow keeps working and takes priority server-side.
         try {
           const raw = sessionStorage.getItem("manus-cookie");
           if (raw) {
             const prefix = `${COOKIE_NAME}=`;
             const pair = raw.split(";").find(s => s.trim().startsWith(prefix));
             const token = pair?.trim().slice(prefix.length);
-            if (token) {
-              return { Authorization: `Bearer ${token}` };
-            }
+            if (token) return { Authorization: `Bearer ${token}` };
           }
         } catch {
           // sessionStorage unavailable
