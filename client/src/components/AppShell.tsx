@@ -34,7 +34,14 @@ function useIsDrawerLayout() {
     const sync = () => setIsDrawer(mql.matches);
     sync();
     mql.addEventListener("change", sync);
-    return () => mql.removeEventListener("change", sync);
+    // شبكة أمان: رُصد عمليًا عبور حدّ العرض دون إطلاق حدث change، فتبقى
+    // القائمة الجانبية الظاهرة على سطح المكتب محمولة على inert أي غير قابلة
+    // للوصول بلوحة المفاتيح إطلاقًا. resize يصحّح الحالة في كل الأحوال.
+    window.addEventListener("resize", sync);
+    return () => {
+      mql.removeEventListener("change", sync);
+      window.removeEventListener("resize", sync);
+    };
   }, []);
   return isDrawer;
 }
