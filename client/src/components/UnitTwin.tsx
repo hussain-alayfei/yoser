@@ -20,10 +20,10 @@ import { lazy, Suspense, useState } from "react";
 import { Link } from "wouter";
 import { unitComponents } from "@/data";
 import { constructionFloors } from "@/constructionData";
-import type { RoomId, SystemKey } from "./ResidentialTwin3D";
+import type { RoomId, SystemKey } from "./ResidentialDigitalTwin";
 import { StatusBadge } from "./StatusBadge";
 
-const ResidentialTwin3D = lazy(() => import("./ResidentialTwin3D").then((module) => ({ default: module.ResidentialTwin3D })));
+const ResidentialDigitalTwin = lazy(() => import("./ResidentialDigitalTwin").then((module) => ({ default: module.ResidentialDigitalTwin })));
 
 const systemIcons = {
   electricity: PlugZap,
@@ -71,7 +71,7 @@ export function ConstructionTwin() {
       <div className="twin-workspace-grid">
         <section className="twin-viewport-panel" aria-label="منطقة عرض المجسم">
           <Suspense fallback={<TwinLoading />}>
-            <ResidentialTwin3D mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
+            <ResidentialDigitalTwin mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
           </Suspense>
         </section>
 
@@ -141,7 +141,7 @@ export function UnitTwin({ compact = false }: { compact?: boolean }) {
         <div>
           <p className="eyebrow">بعد الاستلام · Home Digital Twin</p>
           <h2>وحدتك السكنية، غرفةً ونظامًا</h2>
-          <p>تجوّل داخل الوحدة، اختر الغرفة، ثم فعّل الكهرباء أو السباكة أو التكييف لرؤية النظام المرتبط وحالة الصيانة.</p>
+          <p>تجوّل داخل الوحدة واختر الغرفة، ثم افحص الكهرباء والسباكة والتكييف والتشطيبات والأبواب والمرافق مباشرة داخل المجسم.</p>
         </div>
         <div className="twin-overall-progress" aria-label="صحة الوحدة 88 بالمئة">
           <span>صحة الوحدة</span>
@@ -154,7 +154,7 @@ export function UnitTwin({ compact = false }: { compact?: boolean }) {
       <div className="home-twin-grid">
         <section className="twin-viewport-panel">
           <Suspense fallback={<TwinLoading />}>
-            <ResidentialTwin3D
+            <ResidentialDigitalTwin
               mode="home"
               compact={compact}
               selectedRoomId={selectedRoom}
