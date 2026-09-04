@@ -1,6 +1,8 @@
 /** مساعدات مشتركة لدوال Vercel: ردود JSON، وحراسة الطلب، وحدّ معدّل بسيط. */
 
-import { AiNotConfiguredError, AiRequestError } from "./openai";
+// امتداد ‎.js‎ مقصود: دوال Vercel تُترجم ملفًا ملفًا وتُنفَّذ كـ ESM أصلية،
+// وهي تُلزم بامتداد صريح، بخلاف حزم المشروع التي تقبل الاستيراد بلا امتداد.
+import { AiNotConfiguredError, AiRequestError } from "./openai.js";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",

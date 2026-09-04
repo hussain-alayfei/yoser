@@ -17,9 +17,9 @@ import type {
   StalledCasesRequest,
   StalledCasesResult,
   StallThresholds,
-} from "../../shared/ai";
-import { handlePost, json, readJson } from "../_lib/http";
-import { ask, type JsonSchema } from "../_lib/openai";
+} from "../../shared/ai.js";
+import { handlePost, json, readJson } from "../_lib/http.js";
+import { ask, type JsonSchema } from "../_lib/openai.js";
 
 const SEVERITY: StallSeverity[] = ["تحتاج تدخل", "تحتاج متابعة", "عادية"];
 

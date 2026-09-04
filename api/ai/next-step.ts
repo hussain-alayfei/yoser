@@ -6,9 +6,9 @@
  * منه حاليًا لأن الطلب لدى جهة أخرى. الهدف إجابة سؤال «وش أسوي الحين؟».
  */
 
-import type { NextStepRequest, NextStepResult } from "../../shared/ai";
-import { handlePost, json, readJson } from "../_lib/http";
-import { ask, type JsonSchema } from "../_lib/openai";
+import type { NextStepRequest, NextStepResult } from "../../shared/ai.js";
+import { handlePost, json, readJson } from "../_lib/http.js";
+import { ask, type JsonSchema } from "../_lib/openai.js";
 
 const HREFS = [
   "/start",

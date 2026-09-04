@@ -8,10 +8,12 @@
  * المسموح بها كلها وصف مبدئي وليست قرارًا. القرار النهائي للجهة المختصة.
  */
 
-import type { ProgramRecommendInput, ProgramRecommendResult } from "../../shared/ai";
-import { AI_DISCLAIMER } from "../../shared/ai";
-import { handlePost, json, readJson } from "../_lib/http";
-import { ask, type JsonSchema } from "../_lib/openai";
+// استيراد أنواع فقط من خارج api/: دوال Vercel تُنفَّذ كـ ESM أصلية بلا حزم،
+// فلا يوجد shared/ai.js في وقت التشغيل. الأنواع تُمحى عند الترجمة فلا أثر لها،
+// أمّا نصّ التنبيه فتملكه الواجهة وتعرضه دائمًا من مصدر واحد عندها.
+import type { ProgramRecommendInput, ProgramRecommendResult } from "../../shared/ai.js";
+import { handlePost, json, readJson } from "../_lib/http.js";
+import { ask, type JsonSchema } from "../_lib/openai.js";
 
 const SUITABILITY = [
   "ملاءمة مبدئية مرتفعة",
@@ -117,11 +119,7 @@ export default {
         factors: r.factors.map(sanitize),
       }));
 
-      return json({
-        recommendations,
-        disclaimer: AI_DISCLAIMER,
-        source: "ai",
-      } satisfies ProgramRecommendResult);
+      return json({ recommendations, source: "ai" } satisfies ProgramRecommendResult);
     });
   },
 };

@@ -70,8 +70,11 @@ export type ProgramRecommendation = {
 
 export type ProgramRecommendResult = {
   recommendations: ProgramRecommendation[];
-  /** تنبيه ثابت يظهر دائمًا في الواجهة. */
-  disclaimer: string;
+  /**
+   * اختياري عمدًا: الخادم لا يرسله، والواجهة تعرض AI_DISCLAIMER دائمًا.
+   * هكذا يبقى نصّ التنبيه في مصدر واحد ولا يتفرّع بين الطرفين.
+   */
+  disclaimer?: string;
   source: AiSource;
 };
 
