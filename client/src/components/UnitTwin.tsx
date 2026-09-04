@@ -8,7 +8,6 @@ import {
   DoorOpen,
   Droplets,
   Fan,
-  Grid2X2,
   Hammer,
   Home,
   Info,
@@ -17,12 +16,14 @@ import {
   Sofa,
   UtensilsCrossed,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "wouter";
 import { unitComponents } from "@/data";
 import { constructionFloors } from "@/constructionData";
-import { ResidentialTwin3D, type RoomId, type SystemKey } from "./ResidentialTwin3D";
+import type { RoomId, SystemKey } from "./ResidentialTwin3D";
 import { StatusBadge } from "./StatusBadge";
+
+const ResidentialTwin3D = lazy(() => import("./ResidentialTwin3D").then((module) => ({ default: module.ResidentialTwin3D })));
 
 const systemIcons = {
   electricity: PlugZap,
@@ -40,6 +41,10 @@ const roomMeta: Record<RoomId, { name: string; icon: typeof Home }> = {
   bedroom: { name: "غرفة النوم", icon: BedDouble },
   bath: { name: "دورة المياه", icon: Droplets },
 };
+
+function TwinLoading() {
+  return <div className="twin3d-loading" role="status" aria-live="polite"><span /><div><strong>جاري تجهيز التوأم الرقمي</strong><small>تحميل محرك العرض ثلاثي الأبعاد…</small></div></div>;
+}
 
 export function ConstructionTwin() {
   const [selectedKey, setSelectedKey] = useState("second");
@@ -65,7 +70,9 @@ export function ConstructionTwin() {
 
       <div className="twin-workspace-grid">
         <section className="twin-viewport-panel" aria-label="منطقة عرض المجسم">
-          <ResidentialTwin3D mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
+          <Suspense fallback={<TwinLoading />}>
+            <ResidentialTwin3D mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
+          </Suspense>
         </section>
 
         <aside className="twin-inspector floor-detail" aria-live="polite">
@@ -146,14 +153,16 @@ export function UnitTwin({ compact = false }: { compact?: boolean }) {
 
       <div className="home-twin-grid">
         <section className="twin-viewport-panel">
-          <ResidentialTwin3D
-            mode="home"
-            compact={compact}
-            selectedRoomId={selectedRoom}
-            onSelectRoom={setSelectedRoom}
-            selectedSystemKey={selectedSystem}
-            onSelectSystem={setSelectedSystem}
-          />
+          <Suspense fallback={<TwinLoading />}>
+            <ResidentialTwin3D
+              mode="home"
+              compact={compact}
+              selectedRoomId={selectedRoom}
+              onSelectRoom={setSelectedRoom}
+              selectedSystemKey={selectedSystem}
+              onSelectSystem={setSelectedSystem}
+            />
+          </Suspense>
         </section>
 
         <aside className="home-twin-inspector" aria-live="polite">
