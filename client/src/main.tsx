@@ -12,9 +12,11 @@ import "./design.css";
 // Final product-quality overrides: accessibility, navigation clarity and a
 // quieter public-service visual language.
 import "./product-polish.css";
-// Responsive hardening must stay last. It resolves cascade regressions where
-// late desktop overrides otherwise win over earlier mobile media queries.
+// Responsive hardening resolves broad layout regressions first.
 import "./responsive.css";
+// iPhone/mobile finishing layer must remain last so the tab bar, safe areas and
+// touch/overflow rules cannot be recolored by desktop navigation styles.
+import "./mobile-ios.css";
 
 const queryClient = new QueryClient();
 
