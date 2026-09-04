@@ -18,12 +18,14 @@ const navItems = [
   { href: "/notifications", label: "التحديثات", icon: Bell },
 ];
 
+// Use real route paths rather than query-string pseudo pages. Wouter's pathname
+// location does not make query-only transitions a reliable source of page state.
 const associationNavItems = [
   { href: "/association", label: "نظرة عامة", icon: Home },
-  { href: "/association?view=cases", label: "كل الطلبات", icon: FileText },
-  { href: "/association?view=needs", label: "تحتاج تدخل", icon: ShieldAlert },
-  { href: "/association?view=delayed", label: "الحالات المتأخرة", icon: Clock3 },
-  { href: "/association?view=ready", label: "الجاهزة للمراجعة", icon: CheckCircle2 },
+  { href: "/association/cases", label: "كل الطلبات", icon: FileText },
+  { href: "/association/needs", label: "تحتاج تدخل", icon: ShieldAlert },
+  { href: "/association/delayed", label: "الحالات المتأخرة", icon: Clock3 },
+  { href: "/association/ready", label: "الجاهزة للمراجعة", icon: CheckCircle2 },
 ];
 
 const DRAWER_QUERY = "(max-width: 760px)";
@@ -46,16 +48,12 @@ function useIsDrawerLayout() {
 
 function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; label: string; icon: typeof Home; mobile?: boolean }) {
   const [location] = useLocation();
-  const [hrefPath, hrefSearch = ""] = href.split("?");
-  const currentSearch = typeof window === "undefined" ? "" : window.location.search.replace(/^\?/, "");
-  const hrefView = new URLSearchParams(hrefSearch).get("view");
-  const currentView = new URLSearchParams(currentSearch).get("view");
 
-  const active = hrefPath === "/home"
+  const active = href === "/home"
     ? location === "/home" || location === "/"
-    : hrefPath === "/association"
-      ? location === "/association" && (hrefView ? currentView === hrefView : !currentView)
-      : location === hrefPath || location.startsWith(`${hrefPath}/`);
+    : href === "/association"
+      ? location === "/association"
+      : location === href || location.startsWith(`${href}/`);
 
   return (
     <Link href={href} className={`nav-item ${active ? "active" : ""} ${mobile ? "mobile-nav-item" : ""}`} aria-current={active ? "page" : undefined}>
