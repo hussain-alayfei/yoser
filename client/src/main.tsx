@@ -27,6 +27,8 @@ import "./digital-twin-studio.css";
 // Final transaction/service layer: one clear journey, one dominant action,
 // predictable spacing, and no overlapping fixed controls.
 import "./official-service-ux.css";
+// Absolute last shell contract: uniform header/sidebar geometry and locked-flow affordances.
+import "./structure-system.css";
 
 const queryClient = new QueryClient();
 
