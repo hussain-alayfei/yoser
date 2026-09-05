@@ -29,18 +29,52 @@ export function getJourneyProgress(step: number): number {
   return Math.round(((Math.max(0, Math.min(step, journeyStages.length - 1)) + 1) / journeyStages.length) * 100);
 }
 
+function demoActive(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return new URLSearchParams(window.location.search).get("demo") === "active"; } catch { return false; }
+}
+
 export function getApplicationCreated(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    const demoActive = new URLSearchParams(window.location.search).get("demo") === "active";
-    if (demoActive) sessionStorage.setItem("yusr-application-created", "true");
-    return demoActive || sessionStorage.getItem("yusr-application-created") === "true";
+    const demo = demoActive();
+    if (demo) sessionStorage.setItem("yusr-application-created", "true");
+    return demo || sessionStorage.getItem("yusr-application-created") === "true";
   } catch { return false; }
 }
 
 export function setApplicationCreated(created: boolean): void {
   if (typeof window === "undefined") return;
   try { sessionStorage.setItem("yusr-application-created", String(created)); } catch { /* التخزين اختياري في النموذج الأولي */ }
+}
+
+/**
+ * System-controlled journey gates.
+ * A submitted request does not mean a unit has been assigned, and an assigned
+ * unit does not mean handover is complete. These flags are intentionally
+ * separate so the UI cannot pretend later services are available early.
+ * `?demo=active` unlocks them only for the explicit prototype walkthrough.
+ */
+export function getUnitReady(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (demoActive()) {
+      sessionStorage.setItem("yusr-unit-ready", "true");
+      return true;
+    }
+    return sessionStorage.getItem("yusr-unit-ready") === "true";
+  } catch { return false; }
+}
+
+export function getHandoverComplete(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (demoActive()) {
+      sessionStorage.setItem("yusr-handover-complete", "true");
+      return true;
+    }
+    return sessionStorage.getItem("yusr-handover-complete") === "true";
+  } catch { return false; }
 }
 
 export type JourneyActionInput = {
