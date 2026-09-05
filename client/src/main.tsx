@@ -29,6 +29,8 @@ import "./digital-twin-studio.css";
 import "./official-service-ux.css";
 // Absolute last shell contract: uniform header/sidebar geometry and locked-flow affordances.
 import "./structure-system.css";
+// 3D UX hardening uses stronger scoped selectors so lazy chunk CSS cannot re-hide rooms.
+import "./engineering-twin-v6-ux.css";
 
 const queryClient = new QueryClient();
 
