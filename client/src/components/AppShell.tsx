@@ -1,9 +1,10 @@
 /**
  * App shell for the beneficiary and association journeys.
- * Stable navigation is separated from the sequential service flow: transaction
- * pages enter a focused mode, while dashboard/support pages keep normal nav.
+ * The shell is intentionally stable across the whole internal experience:
+ * header, sidebar and content lane do not change just because the user moved
+ * from onboarding data to application tracking.
  */
-import { Armchair, ArrowRight, Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
+import { Armchair, ArrowRight, Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LockKeyhole, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { getApplicationCreated, getJourneyStep } from "@/journeyExperience";
@@ -19,8 +20,6 @@ const navItems = [
   { href: "/unit/furnishing", label: "التأثيث", icon: Armchair },
   { href: "/notifications", label: "التحديثات", icon: Bell },
 ];
-
-const mobileNavItems = navItems.filter((item) => item.href !== "/requirements");
 
 const associationNavItems = [
   { href: "/association", label: "نظرة عامة", icon: Home },
@@ -50,7 +49,17 @@ function useIsDrawerLayout() {
   return isDrawer;
 }
 
-function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; label: string; icon: typeof Home; mobile?: boolean }) {
+type NavLinkProps = {
+  href: string;
+  targetHref?: string;
+  label: string;
+  icon: typeof Home;
+  mobile?: boolean;
+  locked?: boolean;
+  lockReason?: string;
+};
+
+function NavLink({ href, targetHref, label, icon: Icon, mobile = false, locked = false, lockReason }: NavLinkProps) {
   const [location] = useLocation();
 
   const active = href === "/home"
@@ -63,10 +72,22 @@ function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; la
           ? location === "/association"
           : location === href || location.startsWith(`${href}/`);
 
-  return (
-    <Link href={href} className={`nav-item ${active ? "active" : ""} ${mobile ? "mobile-nav-item" : ""}`} aria-current={active ? "page" : undefined}>
+  const className = `nav-item ${active ? "active" : ""} ${mobile ? "mobile-nav-item" : ""} ${locked ? "nav-item-locked" : ""}`;
+  const content = (
+    <>
       <Icon aria-hidden="true" size={mobile ? 20 : 19} strokeWidth={active ? 2.4 : 2} />
       <span>{label}</span>
+      {locked && <LockKeyhole className="nav-lock-icon" aria-hidden="true" size={mobile ? 13 : 14} />}
+    </>
+  );
+
+  if (locked) {
+    return <span className={className} aria-disabled="true" title={lockReason}>{content}</span>;
+  }
+
+  return (
+    <Link href={targetHref ?? href} className={className} aria-current={active ? "page" : undefined}>
+      {content}
     </Link>
   );
 }
@@ -79,13 +100,38 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
   useEffect(() => { setOpen(false); }, [location]);
 
   const hasApplication = getApplicationCreated();
+  const hasProfile = (() => { try { return Boolean(sessionStorage.getItem("sakan-profile")); } catch { return false; } })();
+  const selectedProgram = (() => { try { return sessionStorage.getItem("yusr-selected-program") ?? ""; } catch { return ""; } })();
   const currentJourneyStep = journeyStep ?? getJourneyStep(location, hasApplication);
   const showJourney = variant === "beneficiary" && JOURNEY_ROUTES.has(location);
   const guidedFlow = variant === "beneficiary" && (GUIDED_ROUTES.has(location) || (location === "/application" && !hasApplication));
-  const showSidebar = !guidedFlow;
-  const drawerHidden = showSidebar && isDrawer && !open;
-  const showMobileBottomNav = !showJourney && !guidedFlow;
+
+  // Internal pages always share the same navigation frame. On phones the same
+  // sidebar becomes a drawer instead of disappearing from the product model.
+  const showSidebar = true;
+  const drawerHidden = isDrawer && !open;
+  const showMobileBottomNav = !showJourney;
   const routeKey = location === "/" ? "root" : location.replace(/^\//, "").replace(/[^a-zA-Z0-9]+/g, "-") || "root";
+
+  const journeyTargetHref = !hasProfile ? "/start" : !selectedProgram ? "/programs" : "/application";
+  const beneficiaryItems: NavLinkProps[] = navItems.map((item) => {
+    if (item.href === "/application") return { ...item, targetHref: journeyTargetHref };
+    if (item.href === "/requirements") return {
+      ...item,
+      locked: !hasApplication,
+      lockReason: "تتاح المتطلبات بعد إكمال البيانات واختيار البرنامج وتقديم الطلب.",
+    };
+    if (item.href === "/unit" || item.href === "/unit/furnishing") return {
+      ...item,
+      locked: !hasApplication,
+      lockReason: "أكمل تقديم الطلب أولًا قبل الانتقال إلى خدمات المسكن.",
+    };
+    return item;
+  });
+  const desktopItems = variant === "association" ? associationNavItems : beneficiaryItems;
+  const mobileItems = variant === "association"
+    ? associationNavItems.slice(0, 4)
+    : beneficiaryItems.filter((item) => item.href !== "/requirements");
 
   const guidedBack = location === "/start"
     ? { href: "/home", label: "الرئيسية" }
@@ -96,7 +142,7 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
         : null;
 
   return (
-    <div className={`app-shell route-${routeKey} ${guidedFlow ? "guided-flow" : ""} ${variant === "association" ? "association-shell" : ""}`} dir="rtl">
+    <div className={`app-shell route-${routeKey} ${guidedFlow ? "journey-guided" : ""} ${variant === "association" ? "association-shell" : ""}`} dir="rtl">
       {showSidebar && (
         <aside id="app-sidebar" className={`sidebar ${open ? "is-open" : ""}`} aria-label="التنقل الرئيسي" inert={drawerHidden} aria-hidden={drawerHidden || undefined}>
           <Link href={variant === "association" ? "/association" : "/home"} className="brand-lockup" aria-label="يسر · الصفحة الرئيسية">
@@ -106,7 +152,7 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
 
           <nav className="side-nav">
             <p className="nav-caption">{variant === "association" ? "مساحة الجمعية" : "الأقسام الرئيسية"}</p>
-            {(variant === "association" ? associationNavItems : navItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} />)}
+            {desktopItems.map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} />)}
           </nav>
 
           <div className="sidebar-bottom">
@@ -134,14 +180,8 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
             <strong>يسر</strong>
           </Link>
           <div className="topbar-spacer" />
-          {guidedFlow ? (
-            <Link className="guided-exit-link" href="/home">العودة للرئيسية</Link>
-          ) : (
-            <>
-              <button className="topbar-bell" aria-label="التحديثات" onClick={() => navigate("/notifications")}><Bell size={20} /><i /></button>
-              <button className="profile-chip" onClick={() => navigate("/profile")} aria-label="فتح الملف الشخصي"><span>أحمد</span><UserRound size={19} /></button>
-            </>
-          )}
+          <button className="topbar-bell" aria-label="التحديثات" onClick={() => navigate("/notifications")}><Bell size={20} /><i /></button>
+          <button className="profile-chip" onClick={() => navigate("/profile")} aria-label="فتح الملف الشخصي"><span>أحمد</span><UserRound size={19} /></button>
         </header>
 
         {showJourney && <JourneyNavigator currentStep={currentJourneyStep} />}
@@ -171,7 +211,7 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
 
       {showMobileBottomNav && (
         <nav className="mobile-bottom-nav" aria-label="التنقل السفلي">
-          {(variant === "association" ? associationNavItems.slice(0, 4) : mobileNavItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} mobile />)}
+          {mobileItems.map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} mobile />)}
         </nav>
       )}
     </div>
