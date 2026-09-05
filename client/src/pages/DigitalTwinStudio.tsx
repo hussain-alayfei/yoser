@@ -1,5 +1,5 @@
-import { EngineeringTwinStudio } from "@/components/ResidentialDigitalTwin";
+import { EngineeringTwinStudioV5 } from "@/components/EngineeringTwinStudioV5";
 
 export function DigitalTwinStudioPage() {
-  return <EngineeringTwinStudio />;
+  return <EngineeringTwinStudioV5 />;
 }
