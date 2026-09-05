@@ -16,6 +16,8 @@ import "./product-polish.css";
 import "./responsive.css";
 // iPhone/mobile finishing layer keeps tab bars, safe areas and touch targets stable.
 import "./mobile-ios.css";
+// Final journey pass: clear process steps, one primary action, quiet AI markers.
+import "./journey-v2.css";
 // Dedicated WebGL digital-twin workspace styles are tightly scoped and load last.
 import "./digital-twin-3d.css";
 import "./digital-twin-loading.css";
