@@ -1,0 +1,113 @@
+/* Final layout hardening for Digital Twin V6. Imported after engineering-twin-v6.css. */
+.v6-studio,
+.v6-body,
+.v6-viewport,
+.v6-inspector,
+.v6-systems-rail { min-width: 0; min-height: 0; }
+
+.v6-body {
+  grid-template-columns: minmax(220px, 250px) minmax(520px, 1fr) minmax(176px, 198px);
+}
+
+.v6-viewport {
+  isolation: isolate;
+}
+
+/* Keep a guaranteed control lane inside the viewport so controls never clip. */
+.v6-view-controls,
+.v6-room-strip {
+  bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.v6-view-controls {
+  left: 16px;
+  max-width: calc(100% - 32px);
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+}
+.v6-view-controls::-webkit-scrollbar { display: none; }
+.v6-control-group { flex: 0 0 auto; }
+
+.v6-room-strip {
+  right: 16px;
+  max-width: min(48%, 520px);
+}
+
+/* At common laptop widths, the empty inspector consumes too much scene space.
+   Hide it and devote that width to the model; systems remain visible. */
+@media (max-width: 1320px) and (min-width: 821px) {
+  .v6-body {
+    grid-template-columns: minmax(0, 1fr) minmax(176px, 190px);
+    grid-template-areas: "viewport systems";
+  }
+  .v6-inspector { display: none; }
+  .v6-room-strip { max-width: min(52%, 500px); }
+}
+
+/* Smaller desktop/tablet: preserve the viewport first, then controls. */
+@media (max-width: 1040px) and (min-width: 821px) {
+  .v6-body {
+    grid-template-columns: minmax(0, 1fr) 168px;
+  }
+  .v6-systems-rail { padding-inline: 8px; }
+  .v6-title { right: 16px; top: 16px; max-width: min(440px, 58%); }
+  .v6-room-strip {
+    right: 16px;
+    left: auto;
+    max-width: min(44%, 340px);
+  }
+  .v6-view-controls { max-width: min(52%, 420px); }
+}
+
+@media (max-width: 820px) {
+  .v6-studio { min-height: 100dvh; }
+  .v6-topbar {
+    height: 58px;
+    flex-basis: 58px;
+    padding-inline: 10px;
+  }
+  .v6-body { position: relative; display: block; }
+  .v6-viewport { position: absolute; inset: 0; }
+  .v6-systems-rail,
+  .v6-inspector { display: none; }
+
+  /* Reserve the upper strip for system/floor controls and keep title below it. */
+  .v6-mobile-system-strip { top: 10px; left: 10px; right: 10px; }
+  .v6-mobile-floor-strip { left: 10px; right: 10px; }
+  .v6-title {
+    top: 108px;
+    right: 14px;
+    left: 14px;
+    max-width: none;
+  }
+
+  /* Desktop overlays become a single safe bottom lane on mobile. */
+  .v6-view-controls {
+    left: 10px;
+    right: 10px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .v6-view-controls button { flex: 0 0 36px; }
+
+  .v6-room-strip {
+    right: 10px;
+    left: 10px;
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .v6-brand strong { max-width: 180px; }
+  .v6-title { top: 104px; }
+  .v6-title h1 { font-size: 16px; }
+  .v6-room-strip button { height: 34px; }
+  .v6-view-controls { padding: 4px; gap: 2px; }
+  .v6-view-controls button { width: 34px; height: 34px; flex-basis: 34px; }
+}
