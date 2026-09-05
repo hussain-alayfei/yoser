@@ -11,6 +11,7 @@ import {
   Hammer,
   Home,
   Info,
+  Maximize2,
   Paintbrush,
   PlugZap,
   Sofa,
@@ -66,7 +67,10 @@ export function ConstructionTwin() {
         </div>
       </header>
 
-      <p className="twin-disclaimer"><Info size={15} /><span>المجسم تفاعلي ويعرض بيانات النموذج التجريبي. النسب والتواريخ ليست تقريرًا هندسيًا معتمدًا.</span></p>
+      <div className="twin-studio-entry-row">
+        <p className="twin-disclaimer"><Info size={15} /><span>المجسم تفاعلي ويعرض بيانات النموذج التجريبي. النسب والتواريخ ليست تقريرًا هندسيًا معتمدًا.</span></p>
+        <Link className="twin-open-studio" href="/unit/twin"><Maximize2 size={15} /> فتح العرض الهندسي الكامل</Link>
+      </div>
 
       <div className="twin-workspace-grid">
         <section className="twin-viewport-panel" aria-label="منطقة عرض المجسم">
@@ -150,6 +154,11 @@ export function UnitTwin({ compact = false }: { compact?: boolean }) {
           <small>آخر مزامنة · الآن</small>
         </div>
       </header>
+
+      <div className="twin-studio-entry-row home-entry-row">
+        <p><strong>تبي تشوفها هندسيًا؟</strong><span>افتح المبنى كاملًا وادخل على مسارات الكهرباء والتكييف المركزي والمياه بين الأدوار.</span></p>
+        <Link className="twin-open-studio" href="/unit/twin"><Maximize2 size={15} /> فتح التوأم الهندسي الكامل</Link>
+      </div>
 
       <div className="home-twin-grid">
         <section className="twin-viewport-panel">
