@@ -1,32 +1,62 @@
-/**
- * Digital-twin surfaces. The current building renderer is intentionally CSS-based,
- * but its viewport and inspector are separated so the renderer can be replaced by
- * a React Three Fiber canvas later without redesigning the whole page.
- */
-import { ArrowLeft, Building2, CalendarDays, CheckCircle2, Clock3, DoorOpen, Fan, Grid2X2, Hammer, Info, Paintbrush, PlugZap, RotateCcw, RotateCw } from "lucide-react";
-import { useRef, useState } from "react";
+import {
+  ArrowLeft,
+  BedDouble,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  DoorOpen,
+  Droplets,
+  Fan,
+  Hammer,
+  Home,
+  Info,
+  Paintbrush,
+  PlugZap,
+  Sofa,
+  UtensilsCrossed,
+} from "lucide-react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "wouter";
 import { unitComponents } from "@/data";
 import { constructionFloors } from "@/constructionData";
+import type { RoomId, SystemKey } from "./ResidentialDigitalTwin";
 import { StatusBadge } from "./StatusBadge";
 
-const iconMap = { electricity: PlugZap, plumbing: Grid2X2, air: Fan, finish: Paintbrush, doors: DoorOpen, facilities: Building2 };
+const ResidentialDigitalTwin = lazy(() => import("./ResidentialDigitalTwin").then((module) => ({ default: module.ResidentialDigitalTwin })));
+
+const systemIcons = {
+  electricity: PlugZap,
+  plumbing: Droplets,
+  air: Fan,
+  finish: Paintbrush,
+  doors: DoorOpen,
+  facilities: Building2,
+} satisfies Record<SystemKey, typeof PlugZap>;
+
+const roomMeta: Record<RoomId, { name: string; icon: typeof Home }> = {
+  living: { name: "المجلس والمعيشة", icon: Sofa },
+  kitchen: { name: "المطبخ", icon: UtensilsCrossed },
+  master: { name: "غرفة النوم الرئيسية", icon: BedDouble },
+  bedroom: { name: "غرفة النوم", icon: BedDouble },
+  bath: { name: "دورة المياه", icon: Droplets },
+};
+
+function TwinLoading() {
+  return <div className="twin3d-loading" role="status" aria-live="polite"><span /><div><strong>جاري تجهيز التوأم الرقمي</strong><small>تحميل محرك العرض ثلاثي الأبعاد…</small></div></div>;
+}
 
 export function ConstructionTwin() {
   const [selectedKey, setSelectedKey] = useState("second");
-  const [rotation, setRotation] = useState(-24);
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef(0);
-  const rotationStart = useRef(0);
   const selected = constructionFloors.find((floor) => floor.key === selectedKey) ?? constructionFloors[1];
 
   return (
     <section className="construction-twin twin-workspace" aria-label="التوأم الرقمي لمتابعة البناء">
       <header className="twin-workspace-header">
         <div>
-          <p className="eyebrow">متابعة البناء</p>
-          <h2>التوأم الرقمي للمسكن</h2>
-          <p>اختر دورًا من المجسم لرؤية ما اكتمل، وما يجري الآن، والخطوة القادمة.</p>
+          <p className="eyebrow">متابعة البناء · Digital Twin</p>
+          <h2>المسكن كما يُبنى، دورًا بدور</h2>
+          <p>دوّر المجسم، قرّب، اختر أي دور، أو افصل الطبقات لرؤية حالة الهيكل وما يتم تنفيذه حاليًا.</p>
         </div>
         <div className="twin-overall-progress" aria-label="نسبة الإنجاز الإجمالي 67 بالمئة">
           <span>الإنجاز الإجمالي</span>
@@ -36,77 +66,13 @@ export function ConstructionTwin() {
         </div>
       </header>
 
-      <p className="twin-disclaimer"><Info size={15} /><span>المجسم الحالي توضيحي. النسب والتواريخ تجريبية وليست تقريرًا هندسيًا معتمدًا.</span></p>
+      <p className="twin-disclaimer"><Info size={15} /><span>المجسم تفاعلي ويعرض بيانات النموذج التجريبي. النسب والتواريخ ليست تقريرًا هندسيًا معتمدًا.</span></p>
 
       <div className="twin-workspace-grid">
         <section className="twin-viewport-panel" aria-label="منطقة عرض المجسم">
-          <div className="twin-viewport-toolbar">
-            <div><strong>UNT-407</strong><span>المبنى السكني</span></div>
-            <span className="twin-renderer-label">معاينة ثلاثية الأبعاد</span>
-          </div>
-
-          {/* Future R3F mount point: replace only the renderer inside this surface. */}
-          <div className="twin-render-surface" data-renderer="css-prototype">
-            <div
-              className={`building-model-stage ${dragging ? "dragging" : ""}`}
-              onPointerDown={(event) => {
-                setDragging(true);
-                dragStart.current = event.clientX;
-                rotationStart.current = rotation;
-                event.currentTarget.setPointerCapture(event.pointerId);
-              }}
-              onPointerMove={(event) => {
-                if (dragging) setRotation(rotationStart.current + (event.clientX - dragStart.current) * .45);
-              }}
-              onPointerUp={() => setDragging(false)}
-              onPointerCancel={() => setDragging(false)}
-            >
-              <div className="building-ground-plane" />
-              <div className="building-model" style={{ transform: `rotateX(-10deg) rotateY(${rotation}deg)` }}>
-                {constructionFloors.slice().reverse().map((floor, index) => (
-                  <button
-                    key={floor.key}
-                    className={`model-floor floor-${floor.key} ${floor.key === selectedKey ? "selected" : ""} ${floor.status === "مكتمل" ? "done" : floor.status === "قيد البناء" ? "building" : "waiting"}`}
-                    style={{ bottom: `${index * 58}px` }}
-                    onClick={(event) => { event.stopPropagation(); setSelectedKey(floor.key); }}
-                    aria-label={`${floor.name}: ${floor.status} بنسبة ${floor.progress}%`}
-                    aria-pressed={floor.key === selectedKey}
-                  >
-                    <span className="model-face model-front">
-                      <span className="facade-shell">
-                        <span className="facade-windows"><i /><i /><i /></span>
-                        {floor.key !== "foundation" && floor.key !== "roof" && <span className="facade-balcony"><i /><i /><i /></span>}
-                        {floor.key === "ground" && <span className="facade-entry"><i /><b /></span>}
-                        {floor.key === "second" && <span className="construction-columns"><i /><i /><i /><i /></span>}
-                        {floor.key === "roof" && <span className="roof-details"><i /><i /><b /></span>}
-                        <span className="facade-label">{floor.name}<small>{floor.progress}%</small></span>
-                      </span>
-                    </span>
-                    <span className="model-face model-back" />
-                    <span className="model-face model-right"><span className="side-windows"><i /><i /></span></span>
-                    <span className="model-face model-left"><span className="side-windows"><i /><i /></span></span>
-                    <span className="model-face model-top" />
-                    <span className="model-face model-bottom" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="twin-viewport-footer">
-            <span className="twin-control-hint">اسحب أفقيًا لتدوير المجسم · اضغط على أي دور للتفاصيل</span>
-            <div className="building-3d-controls" aria-label="التحكم في زاوية المجسم">
-              <button type="button" onClick={() => setRotation((value) => value - 18)} aria-label="تدوير المبنى إلى اليمين"><RotateCw size={16} /></button>
-              <button type="button" onClick={() => setRotation(-24)} aria-label="إعادة ضبط زاوية العرض"><RotateCcw size={16} /></button>
-              <button type="button" onClick={() => setRotation((value) => value + 18)} aria-label="تدوير المبنى إلى اليسار"><RotateCw size={16} className="flip-icon" /></button>
-            </div>
-          </div>
-
-          <div className="building-legend" aria-label="مفتاح حالات الأدوار">
-            <span><i className="done" />مكتمل</span>
-            <span><i className="building" />قيد البناء</span>
-            <span><i className="waiting" />قادم</span>
-          </div>
+          <Suspense fallback={<TwinLoading />}>
+            <ResidentialDigitalTwin mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
+          </Suspense>
         </section>
 
         <aside className="twin-inspector floor-detail" aria-live="polite">
@@ -163,30 +129,78 @@ export function ConstructionTwin() {
 }
 
 export function UnitTwin({ compact = false }: { compact?: boolean }) {
-  const [selectedKey, setSelectedKey] = useState("plumbing");
-  const selected = unitComponents.find((component) => component.key === selectedKey) ?? unitComponents[1];
+  const [selectedRoom, setSelectedRoom] = useState<RoomId>("kitchen");
+  const [selectedSystem, setSelectedSystem] = useState<SystemKey>("plumbing");
+  const selected = unitComponents.find((component) => component.key === selectedSystem) ?? unitComponents[1];
   const linkedTicket = selected.key === "plumbing" ? "MT-1024" : null;
   const nextStep = linkedTicket ? "متابعة إسناد البلاغ" : selected.issues === 0 ? "لا يوجد إجراء مطلوب" : "حجز فحص وقائي";
 
   return (
-    <section className={`unit-twin ${compact ? "compact" : ""}`}>
-      <div className="unit-visual">
-        <div className="unit-id"><span>وحدتي السكنية</span><strong>UNT-407</strong></div>
-        <div className="unit-health"><i /><span>حالة الوحدة</span><strong>جيدة</strong></div>
-      </div>
-      <div className="unit-controls">
-        <div className="section-heading compact-heading"><div><p className="eyebrow">بعد الاستلام</p><h2>{compact ? "حالة وحدتي" : "مكوّنات الوحدة"}</h2></div></div>
-        <div className="component-pills" aria-label="مكوّنات الوحدة">
-          {unitComponents.map((component) => {
-            const Icon = iconMap[component.key as keyof typeof iconMap];
-            return <button key={component.key} className={`component-pill ${selectedKey === component.key ? "selected" : ""}`} onClick={() => setSelectedKey(component.key)}><Icon size={17} /><span>{component.name}</span><i className={component.tone} /></button>;
-          })}
+    <section className={`unit-twin twin-home-workspace ${compact ? "compact" : ""}`} aria-label="التوأم الرقمي للوحدة بعد الاستلام">
+      <header className="twin-workspace-header">
+        <div>
+          <p className="eyebrow">بعد الاستلام · Home Digital Twin</p>
+          <h2>وحدتك السكنية، غرفةً ونظامًا</h2>
+          <p>تجوّل داخل الوحدة واختر الغرفة، ثم افحص الكهرباء والسباكة والتكييف والتشطيبات والأبواب والمرافق مباشرة داخل المجسم.</p>
         </div>
-        <div className="component-detail">
-          <div><p>{selected.name}</p><StatusBadge tone={selected.tone as "success" | "warning"}>{selected.status}</StatusBadge></div>
-          <dl><div><dt>آخر صيانة</dt><dd>{selected.lastMaintenance}</dd></div><div><dt>بلاغات سابقة</dt><dd>{selected.issues}</dd></div><div><dt>الخطوة التالية</dt><dd>{nextStep}</dd></div></dl>
-          <Link className="component-action" href={linkedTicket ? `/unit/maintenance/${linkedTicket}` : "/unit/maintenance/new"}>{linkedTicket ? "عرض البلاغ المرتبط" : "حجز إجراء"} <ArrowLeft size={14} /></Link>
+        <div className="twin-overall-progress" aria-label="صحة الوحدة 88 بالمئة">
+          <span>صحة الوحدة</span>
+          <strong>88%</strong>
+          <i><b style={{ width: "88%" }} /></i>
+          <small>آخر مزامنة · الآن</small>
         </div>
+      </header>
+
+      <div className="home-twin-grid">
+        <section className="twin-viewport-panel">
+          <Suspense fallback={<TwinLoading />}>
+            <ResidentialDigitalTwin
+              mode="home"
+              compact={compact}
+              selectedRoomId={selectedRoom}
+              onSelectRoom={setSelectedRoom}
+              selectedSystemKey={selectedSystem}
+              onSelectSystem={setSelectedSystem}
+            />
+          </Suspense>
+        </section>
+
+        <aside className="home-twin-inspector" aria-live="polite">
+          <div className="home-inspector-title">
+            <div><p className="eyebrow">الوحدة UNT-407</p><h3>{roomMeta[selectedRoom].name}</h3></div>
+            <StatusBadge tone="success">حالة جيدة</StatusBadge>
+          </div>
+
+          <div className="home-inspector-health"><span>مؤشر صحة الوحدة</span><strong>88%</strong><i><b /></i></div>
+
+          <div className="home-room-list">
+            <h4>الغرف والمساحات</h4>
+            {(Object.entries(roomMeta) as Array<[RoomId, (typeof roomMeta)[RoomId]]>).map(([key, room]) => {
+              const Icon = room.icon;
+              return <button key={key} className={selectedRoom === key ? "active" : ""} onClick={() => setSelectedRoom(key)}><Icon size={15} /><span>{room.name}</span></button>;
+            })}
+          </div>
+
+          <div className="home-system-list">
+            <h4>أنظمة الوحدة</h4>
+            {unitComponents.map((component) => {
+              const key = component.key as SystemKey;
+              const Icon = systemIcons[key];
+              return <button key={component.key} className={selectedSystem === key ? "active" : ""} onClick={() => setSelectedSystem(key)}><Icon size={15} /><span>{component.name}</span><i className={component.tone} /></button>;
+            })}
+          </div>
+
+          <div className="home-selected-detail">
+            <div><h4>{selected.name}</h4><StatusBadge tone={selected.tone as "success" | "warning"}>{selected.status}</StatusBadge></div>
+            <dl>
+              <div><dt>آخر صيانة</dt><dd>{selected.lastMaintenance}</dd></div>
+              <div><dt>بلاغات سابقة</dt><dd>{selected.issues}</dd></div>
+              <div><dt>المساحة الحالية</dt><dd>{roomMeta[selectedRoom].name}</dd></div>
+              <div><dt>الخطوة التالية</dt><dd>{nextStep}</dd></div>
+            </dl>
+            <Link className="component-action" href={linkedTicket ? `/unit/maintenance/${linkedTicket}` : "/unit/maintenance/new"}>{linkedTicket ? "عرض البلاغ المرتبط" : "حجز إجراء"} <ArrowLeft size={14} /></Link>
+          </div>
+        </aside>
       </div>
     </section>
   );

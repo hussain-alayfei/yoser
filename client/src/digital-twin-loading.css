@@ -1,0 +1,26 @@
+.twin3d-loading {
+  width: 100%;
+  min-height: 530px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #d5e0dc;
+  border-radius: 9px;
+  background: #edf2f0;
+  color: #173f38;
+}
+.twin3d-loading > span {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #b8cbc5;
+  border-top-color: #0b4f46;
+  border-radius: 50%;
+  animation: twin3d-spin .8s linear infinite;
+}
+.twin3d-loading > div { display: grid; gap: 3px; }
+.twin3d-loading strong { font-size: 11px; }
+.twin3d-loading small { color: #71847f; font-size: 8px; }
+@keyframes twin3d-spin { to { transform: rotate(360deg); } }
+@media (max-width: 760px) { .twin3d-loading { min-height: 390px; } }
+@media (prefers-reduced-motion: reduce) { .twin3d-loading > span { animation: none; } }
