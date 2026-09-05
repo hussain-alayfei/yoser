@@ -1,8 +1,9 @@
 /**
  * App shell for the beneficiary and association journeys.
- * Navigation stays stable across the experience; page state changes, the map does not.
+ * Global navigation is for stable places; the horizontal journey tracker owns
+ * the process order so users never have to infer progress from sidebar tabs.
  */
-import { Bell, Building2, CheckCircle2, Clock3, FileText, Home, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
+import { Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { getApplicationCreated, getJourneyStep } from "@/journeyExperience";
@@ -12,17 +13,19 @@ const logo = "/brand/yusr-logo.svg";
 
 const navItems = [
   { href: "/home", label: "الرئيسية", icon: Home },
-  { href: "/programs", label: "البرامج", icon: CheckCircle2 },
-  { href: "/application", label: "الطلب", icon: FileText },
+  { href: "/application", label: "رحلتي", icon: Compass },
+  { href: "/requirements", label: "المتطلبات", icon: ClipboardList },
   { href: "/unit", label: "المسكن", icon: Building2 },
   { href: "/notifications", label: "التحديثات", icon: Bell },
 ];
+
+const mobileNavItems = navItems.filter((item) => item.href !== "/requirements");
 
 // Use real route paths rather than query-string pseudo pages. Wouter's pathname
 // location does not make query-only transitions a reliable source of page state.
 const associationNavItems = [
   { href: "/association", label: "نظرة عامة", icon: Home },
-  { href: "/association/cases", label: "كل الطلبات", icon: FileText },
+  { href: "/association/cases", label: "كل الطلبات", icon: ClipboardList },
   { href: "/association/needs", label: "تحتاج تدخل", icon: ShieldAlert },
   { href: "/association/delayed", label: "الحالات المتأخرة", icon: Clock3 },
   { href: "/association/ready", label: "الجاهزة للمراجعة", icon: CheckCircle2 },
@@ -51,9 +54,11 @@ function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; la
 
   const active = href === "/home"
     ? location === "/home" || location === "/"
-    : href === "/association"
-      ? location === "/association"
-      : location === href || location.startsWith(`${href}/`);
+    : href === "/application"
+      ? location === "/start" || location === "/programs" || location === "/application"
+      : href === "/association"
+        ? location === "/association"
+        : location === href || location.startsWith(`${href}/`);
 
   return (
     <Link href={href} className={`nav-item ${active ? "active" : ""} ${mobile ? "mobile-nav-item" : ""}`} aria-current={active ? "page" : undefined}>
@@ -73,21 +78,18 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
 
   const hasApplication = getApplicationCreated();
   const currentJourneyStep = journeyStep ?? getJourneyStep(location, hasApplication);
-  // Keep the information architecture stable even before an application exists.
-  // Destination pages already explain when a feature is not available yet.
-  const beneficiaryNavItems = navItems;
 
   return (
     <div className={`app-shell ${variant === "association" ? "association-shell" : ""}`} dir="rtl">
       <aside id="app-sidebar" className={`sidebar ${open ? "is-open" : ""}`} aria-label="التنقل الرئيسي" inert={drawerHidden} aria-hidden={drawerHidden || undefined}>
         <Link href={variant === "association" ? "/association" : "/home"} className="brand-lockup" aria-label="يسر · الصفحة الرئيسية">
           <img src={logo} alt="" className="brand-mark" />
-          <div><strong>يسر</strong><small>رحلتك السكنية في مكان واحد</small></div>
+          <div><strong>يسر</strong><small>من البداية إلى استقرار المسكن</small></div>
         </Link>
 
         <nav className="side-nav">
-          <p className="nav-caption">{variant === "association" ? "مساحة الجمعية" : "التنقل"}</p>
-          {(variant === "association" ? associationNavItems : beneficiaryNavItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} />)}
+          <p className="nav-caption">{variant === "association" ? "مساحة الجمعية" : "الأقسام الرئيسية"}</p>
+          {(variant === "association" ? associationNavItems : navItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} />)}
         </nav>
 
         <div className="sidebar-bottom">
@@ -138,7 +140,7 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
       </main>
 
       <nav className="mobile-bottom-nav" aria-label="التنقل السفلي">
-        {(variant === "association" ? associationNavItems.slice(0, 4) : beneficiaryNavItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} mobile />)}
+        {(variant === "association" ? associationNavItems.slice(0, 4) : mobileNavItems).map((item) => <NavLink key={`${item.href}-${item.label}`} {...item} mobile />)}
       </nav>
     </div>
   );
