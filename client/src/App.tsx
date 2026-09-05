@@ -10,16 +10,22 @@ import "./motion.css";
 // بعده في الحزمة وأعاد قيم :root القديمة ونَسَخ التسطيح.
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LoginPage } from "./pages/Login";
 import { OnboardingPage } from "./pages/Onboarding";
 import { JourneyStartPage, HomePage, ProfilePage, ProgramsPage, ApplicationPage, RequirementsPage, NotificationsPage, UnitPage, MaintenancePage, MaintenanceDetailPage, NewMaintenancePage } from "./pages/BeneficiaryPages";
-import { DigitalTwinStudioPage } from "./pages/DigitalTwinStudio";
 import { StaffPage } from "./pages/Staff";
 import { AssociationCasePage } from "./pages/Association";
 import { AssociationWorkspacePage } from "./pages/AssociationWorkspace";
+
+const DigitalTwinStudioPage = lazy(() => import("./pages/DigitalTwinStudio").then((module) => ({ default: module.DigitalTwinStudioPage })));
+
+function DigitalTwinStudioRoute() {
+  return <Suspense fallback={<main className="twin-studio-route-loading" dir="rtl"><span /><div><strong>جاري تجهيز التوأم الرقمي الهندسي</strong><small>تحميل المحرك ثلاثي الأبعاد ومسارات الأنظمة…</small></div></main>}><DigitalTwinStudioPage /></Suspense>;
+}
 
 function Router() {
   return <Switch>
@@ -34,7 +40,7 @@ function Router() {
     <Route path="/requirements" component={RequirementsPage} />
     <Route path="/notifications" component={NotificationsPage} />
     <Route path="/unit" component={UnitPage} />
-    <Route path="/unit/twin" component={DigitalTwinStudioPage} />
+    <Route path="/unit/twin" component={DigitalTwinStudioRoute} />
     <Route path="/unit/maintenance" component={MaintenancePage} />
     <Route path="/unit/maintenance/new" component={NewMaintenancePage} />
     <Route path="/unit/maintenance/:id" component={MaintenanceDetailPage} />
