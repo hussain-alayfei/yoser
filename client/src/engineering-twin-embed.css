@@ -1,0 +1,109 @@
+/* Embedded engineering twin — the /unit preview now renders the exact same V6
+   workspace used by /unit/twin. This layer only changes containment; it does not
+   restyle the 3D model, controls, systems, floors, rooms, or engineering UI. */
+.twin-workspace-grid.twin-workspace-grid-unified {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.twin-engineering-preview {
+  position: relative;
+  width: 100%;
+  height: clamp(590px, 57vw, 720px);
+  min-height: 590px;
+  overflow: hidden;
+  isolation: isolate;
+  contain: layout paint;
+  border: 1px solid #d7e1dd;
+  border-radius: 12px;
+  background: #f7f9f8;
+}
+
+/* EngineeringTwinStudioV6 is a full-screen workspace on /unit/twin. Inside the
+   construction page it becomes a bounded workspace, while remaining the very
+   same component and scene. */
+.twin-engineering-preview .v6-studio {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.twin-build-summary {
+  display: grid;
+  grid-template-columns: minmax(190px, .72fr) minmax(210px, .82fr) minmax(0, 1.7fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.twin-build-summary .floor-detail-title,
+.twin-build-summary .floor-progress-large,
+.twin-build-summary .floor-dates,
+.twin-build-summary .floor-work-groups {
+  min-width: 0;
+}
+
+.twin-build-summary .floor-detail-title {
+  align-self: stretch;
+}
+
+.twin-build-summary .floor-progress-large {
+  margin: 0;
+}
+
+.twin-build-summary .floor-dates {
+  margin: 0;
+}
+
+.twin-build-summary .floor-work-groups {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.twin-build-summary .floor-work-groups > div {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .twin-engineering-preview {
+    height: 640px;
+  }
+
+  .twin-build-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .twin-build-summary .floor-work-groups {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .twin-engineering-preview {
+    height: min(72svh, 620px);
+    min-height: 500px;
+    border-radius: 10px;
+  }
+
+  .twin-build-summary,
+  .twin-build-summary .floor-work-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .twin-build-summary .floor-work-groups {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .twin-engineering-preview {
+    height: 560px;
+    min-height: 560px;
+    margin-inline: 0;
+  }
+}
