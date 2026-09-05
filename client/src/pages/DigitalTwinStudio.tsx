@@ -1,595 +1,88 @@
-import {
-  ContactShadows,
-  Grid,
-  Html,
-  Line,
-  OrbitControls,
-} from "@react-three/drei";
+import { ContactShadows, Grid, Html, OrbitControls, RoundedBox } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  ArrowLeft,
-  Box,
-  Building2,
-  CheckCircle2,
-  Droplets,
-  Eye,
-  EyeOff,
-  Focus,
-  Grid3X3,
-  Home,
-  Info,
-  Layers3,
-  Maximize2,
-  RotateCcw,
-  Wind,
-  Zap,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { ArrowLeft, Box, Building2, CheckCircle2, Droplets, Eye, EyeOff, Focus, Grid3X3, Home, Info, Layers3, Maximize2, RotateCcw, Wind, Wrench, Zap } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
 import { Link } from "wouter";
 import * as THREE from "three";
 import "../digital-twin-studio.css";
+import "../digital-twin-studio-pro.css";
 
-type Vec3 = [number, number, number];
-type SystemKey = "architecture" | "electricity" | "hvac" | "plumbing";
-type FloorKey = "all" | "ground" | "first" | "second" | "roof";
-type ViewPreset = "iso" | "top" | "front" | "walk";
-type CameraTarget = { camera: Vec3; target: Vec3 };
+type V3=[number,number,number];
+type Sys="architecture"|"electricity"|"grounding"|"hvac"|"water"|"drainage";
+type Floor="all"|"ground"|"first"|"second"|"roof";
+type Room="all"|"living"|"kitchen"|"master"|"bedroom"|"bath";
+type Preset="iso"|"top"|"front"|"walk";
+type Cam={camera:V3;target:V3};
 
-const C = {
-  ink: "#173f38",
-  brand: "#0b4f46",
-  stone: "#b8aa98",
-  stoneDark: "#8f806f",
-  stucco: "#e8e2d8",
-  stuccoSide: "#d7d0c5",
-  concrete: "#bdb8ae",
-  slab: "#a9a59d",
-  glass: "#6e9ba6",
-  frame: "#4d5b58",
-  steel: "#66716e",
-  soil: "#b7aa93",
-  green: "#688b70",
-  electric: "#d3a53a",
-  electric2: "#f1c75d",
-  hvac: "#4f9e90",
-  hvac2: "#7bc0b5",
-  water: "#3f87ad",
-  hot: "#c56c52",
-  drain: "#737b79",
-};
-
-const floorY: Record<Exclude<FloorKey, "all" | "roof">, number> = {
-  ground: 0.18,
-  first: 3.23,
-  second: 6.28,
-};
-
-const floorMeta: Array<{ key: FloorKey; label: string; short: string }> = [
-  { key: "all", label: "المبنى كامل", short: "ALL" },
-  { key: "ground", label: "الدور الأرضي", short: "G" },
-  { key: "first", label: "الدور الأول", short: "01" },
-  { key: "second", label: "الدور الثاني", short: "02" },
-  { key: "roof", label: "السطح والخدمات", short: "R" },
+const C={brand:"#0b4f46",wall:"#eee9e0",side:"#d8d1c7",stone:"#bfae96",stone2:"#8e765c",slab:"#aaa69e",glass:"#6d9da7",frame:"#465955",green:"#6e9276",electric:"#d4a33a",electric2:"#ffd86f",ground:"#6c9170",hvac:"#4d9c8e",hvac2:"#7bc7b8",water:"#3e8db6",hot:"#c86b55",drain:"#717a78"};
+const FY={ground:.18,first:3.35,second:6.52,roof:9.69};
+const floorMeta:{key:Floor;label:string;short:string}[]=[
+  {key:"all",label:"المبنى كامل",short:"ALL"},{key:"ground",label:"الدور الأرضي",short:"G"},{key:"first",label:"الدور الأول",short:"01"},{key:"second",label:"الدور الثاني",short:"02"},{key:"roof",label:"السطح والخدمات",short:"R"}
 ];
-
-const systemInfo: Record<SystemKey, {
-  label: string;
-  english: string;
-  description: string;
-  path: string[];
-  components: Array<{ code: string; name: string; detail: string }>;
-  color: string;
-}> = {
-  architecture: {
-    label: "المعماري",
-    english: "ARCHITECTURE",
-    description: "واجهة سكنية كاملة مع الفتحات والشرفات والمدخل وغرفة خدمات السطح والتقسيمات الداخلية الأساسية.",
-    path: ["الموقع", "الهيكل", "الواجهات", "الفتحات", "التقسيم الداخلي", "السطح"],
-    components: [
-      { code: "A-101", name: "واجهة أمامية", detail: "حجر + لياسة خارجية + زجاج" },
-      { code: "A-201", name: "التقسيمات الداخلية", detail: "جدران داخلية وأبواب ومسارات حركة" },
-      { code: "A-301", name: "السطح", detail: "بارابيت + غرفة خدمات + وصول صيانة" },
-    ],
-    color: C.brand,
-  },
-  electricity: {
-    label: "الكهرباء",
-    english: "ELECTRICAL",
-    description: "مسار التغذية من نقطة الخدمة الخارجية إلى العداد ثم اللوحة الرئيسية والرایزر ولوحات الأدوار ومسارات الكوابل والمخارج.",
-    path: ["SERVICE", "MTR-01", "MDB-01", "E-RISER-01", "DB-G/01/02", "CABLE TRAY", "FINAL CIRCUITS"],
-    components: [
-      { code: "MTR-01", name: "عداد الخدمة", detail: "نقطة دخول التغذية للمبنى" },
-      { code: "MDB-01", name: "اللوحة الرئيسية", detail: "توزيع رئيسي إلى الأدوار والسطح" },
-      { code: "E-RISER-01", name: "رايزر كهرباء", detail: "مسار رأسي محمي بين الأدوار" },
-      { code: "DB-01", name: "لوحات الأدوار", detail: "دوائر إنارة ومخارج وخدمات" },
-    ],
-    color: C.electric,
-  },
-  hvac: {
-    label: "التكييف المركزي",
-    english: "HVAC",
-    description: "تصور مركزي يوضح وحدات السطح وغرفة AHU والشافت الرأسي والدكت الرئيسي وفروع الهواء ومخارج التغذية والراجع.",
-    path: ["RTU-01/02", "AHU-01", "M-SHAFT-01", "MAIN SUPPLY", "BRANCH DUCTS", "DIFFUSERS", "RETURN"],
-    components: [
-      { code: "RTU-01", name: "وحدة تكثيف سطحية", detail: "وحدة خارجية مولّدة للمشهد" },
-      { code: "AHU-01", name: "وحدة مناولة الهواء", detail: "داخل غرفة الخدمات على السطح" },
-      { code: "M-SHAFT-01", name: "شافت ميكانيكي", detail: "نزول رأسي للدكت بين الأدوار" },
-      { code: "SA-01", name: "Supply Air", detail: "دكت رئيسي ثم فروع إلى المخارج" },
-    ],
-    color: C.hvac,
-  },
-  plumbing: {
-    label: "المياه والصرف",
-    english: "PLUMBING",
-    description: "مسار المياه من خزان السطح والمضخة إلى الرايزر البارد والسخانات والنقاط الصحية، مع رايزر صرف مستقل حتى خط الموقع.",
-    path: ["WT-01", "P-01", "CW-RISER", "WH", "FIXTURES", "SW-RISER", "SITE SEWER"],
-    components: [
-      { code: "WT-01", name: "خزان السطح", detail: "مصدر التغذية المائي للمشهد" },
-      { code: "P-01", name: "مضخة تعزيز", detail: "بعد الخزان وقبل الرايزر" },
-      { code: "CW-RISER", name: "رايزر مياه باردة", detail: "فروع لكل دور" },
-      { code: "SW-RISER", name: "رايزر صرف", detail: "نزول مستقل حتى خط الموقع" },
-    ],
-    color: C.water,
-  },
+const rooms:Record<Room,{label:string;short:string;x:number;z:number;w:number;d:number}>={
+  all:{label:"كل المساحات",short:"ALL",x:0,z:0,w:13.4,d:9.3},living:{label:"المجلس والمعيشة",short:"LIV",x:-3.6,z:2.0,w:6.0,d:4.2},kitchen:{label:"المطبخ",short:"KIT",x:3.65,z:2.0,w:5.5,d:4.2},master:{label:"غرفة النوم الرئيسية",short:"MBR",x:-4.0,z:-2.2,w:5.1,d:3.0},bedroom:{label:"غرفة النوم",short:"BR2",x:.55,z:-2.2,w:3.3,d:3.0},bath:{label:"دورة المياه",short:"BTH",x:4.55,z:-2.2,w:2.4,d:3.0}
 };
+const sysMeta:Record<Sys,{label:string;en:string;color:string;desc:string;path:string[];items:{code:string;name:string;detail:string;focus:V3}[]}>={
+ architecture:{label:"المعماري",en:"ARCHITECTURE",color:C.brand,desc:"مبنى سكني ثلاثي الأدوار بواجهة حديثة، تقسيمات داخلية كاملة وأثاث فعلي داخل كل مساحة. استخدم المقطع أو فصل الأدوار لرؤية الفراغات بوضوح.",path:["SITE","ENVELOPE","FLOOR PLATES","ROOMS","FURNITURE","ROOF"],items:[{code:"A-101",name:"الواجهة الرئيسية",detail:"حجر · زجاج · شرفات · مظلات",focus:[0,5,5]},{code:"A-201",name:"الدور الداخلي",detail:"غرف وجدران وأثاث",focus:[0,1.6,0]},{code:"A-301",name:"السطح",detail:"غرفة خدمات ومعدات",focus:[2.8,10.7,-2]}]},
+ electricity:{label:"الكهرباء",en:"ELECTRICAL",color:C.electric,desc:"من نقطة الخدمة والعداد إلى MDB ثم الرايزر ولوحة الدور، وبعدها الدائرة النهائية للغرفة المحددة. اختر غرفة لترى فرعها فقط وتدفق التغذية حتى نقطة الإنارة.",path:["SERVICE","MTR-01","MDB-01","E-RISER","FLOOR DB","ROOM CIRCUIT","END POINT"],items:[{code:"MTR-01",name:"عداد الخدمة",detail:"دخول الكهرباء للمبنى",focus:[8.4,1.2,5.6]},{code:"MDB-01",name:"اللوحة الرئيسية",detail:"Main distribution board",focus:[6.4,1.6,3.5]},{code:"E-RISER",name:"رايزر الكهرباء",detail:"تغذية رأسية للأدوار",focus:[5.8,5.1,-3.6]}]},
+ grounding:{label:"التأريض",en:"EARTHING",color:C.ground,desc:"حلقة تأريض حول المبنى مع أقطاب أرضية وMET وربط اللوحة الرئيسية وموصل PE الصاعد للأدوار. هذا فصل مستقل عن مسار القدرة لتوضيح الحماية.",path:["EARTH RODS","GROUND RING","MET-01","MDB BOND","PE RISER","FLOOR PE"],items:[{code:"ER-01",name:"قطب تأريض",detail:"Earth rod",focus:[-8.2,.1,-5.8]},{code:"MET-01",name:"نقطة التأريض الرئيسية",detail:"Main earthing terminal",focus:[6.25,.75,3.15]},{code:"PE-RISER",name:"موصل الحماية",detail:"PE بين الأدوار",focus:[6,5,-3.2]}]},
+ hvac:{label:"التكييف والتهوية",en:"HVAC",color:C.hvac,desc:"وحدات سطحية وAHU وشافت ميكانيكي ودكت رئيسي ثم فرع مستقل لكل غرفة. اختيار الغرفة يعزل مسار الهواء الخاص بها حتى الـdiffuser.",path:["RTU","AHU-01","M-SHAFT","MAIN SUPPLY","ROOM BRANCH","DIFFUSER"],items:[{code:"RTU-01",name:"وحدة سطحية",detail:"Roof top unit",focus:[-3,10.6,-1.9]},{code:"AHU-01",name:"وحدة مناولة الهواء",detail:"Air handling unit",focus:[3.7,10.7,-2.1]},{code:"M-SHAFT",name:"الشافت الميكانيكي",detail:"نزول الدكت",focus:[.9,5.5,-3.2]}]},
+ water:{label:"المياه",en:"DOMESTIC WATER",color:C.water,desc:"خزان السطح ثم المضخة ورايزر المياه الباردة وفروع الأدوار وصولًا إلى المطبخ ودورات المياه، مع إظهار خط الماء الساخن بشكل مستقل.",path:["WT-01","P-01","CW RISER","FLOOR BRANCH","WATER HEATER","FIXTURES"],items:[{code:"WT-01",name:"خزان المياه",detail:"Roof water tank",focus:[-4.6,10.6,-2.4]},{code:"P-01",name:"مضخة التعزيز",detail:"Booster pump",focus:[-3,10,-2.4]},{code:"CW-RISER",name:"رايزر المياه",detail:"Cold water riser",focus:[-2.4,5.1,-2.4]}]},
+ drainage:{label:"الصرف الصحي",en:"DRAINAGE",color:C.drain,desc:"من نقاط الصرف بالمطبخ ودورة المياه إلى الفروع الأفقية ثم Soil/Waste stack، وبعدها غرفة التفتيش وخط الصرف الخارجي.",path:["FIXTURES","FLOOR WASTE","SW STACK","CLEANOUT","MANHOLE","SITE SEWER"],items:[{code:"SW-01",name:"رايزر الصرف",detail:"Soil/Waste stack",focus:[-1.7,4.9,-2.4]},{code:"CO-01",name:"فتحة تنظيف",detail:"Cleanout",focus:[-1.7,.4,-4.8]},{code:"MH-01",name:"غرفة تفتيش",detail:"Site manhole",focus:[-1.7,.05,-7.3]}]}
+};
+const icons:Record<Sys,typeof Building2>={architecture:Building2,electricity:Zap,grounding:Layers3,hvac:Wind,water:Droplets,drainage:Wrench};
+const fl=(f:Floor)=>floorMeta.find(x=>x.key===f)?.label??"المبنى كامل";
+const rl=(r:Room)=>rooms[r].label;
+const floorVisible=(selected:Floor,key:Exclude<Floor,"all"|"roof">)=>selected==="all"||selected===key;
 
-function CameraRig({ desired, nonce, controlsRef }: { desired: CameraTarget; nonce: number; controlsRef: MutableRefObject<any> }) {
-  const { camera } = useThree();
-  const amount = useRef(1);
-  const p = useMemo(() => new THREE.Vector3(...desired.camera), [desired]);
-  const t = useMemo(() => new THREE.Vector3(...desired.target), [desired]);
-
-  useEffect(() => { amount.current = 1; }, [nonce, p, t]);
-  useFrame(() => {
-    if (amount.current < 0.01) return;
-    camera.position.lerp(p, 0.11);
-    if (controlsRef.current) {
-      controlsRef.current.target.lerp(t, 0.12);
-      controlsRef.current.update();
-    } else camera.lookAt(t);
-    amount.current *= 0.86;
-  });
-  return null;
+function camera(system:Sys,floor:Floor,room:Room,preset:Preset,focus?:V3|null):Cam{
+ if(focus)return{camera:[focus[0]+6.7,focus[1]+4.2,focus[2]+6.7],target:focus};
+ const y=floor==="ground"?1.6:floor==="first"?4.75:floor==="second"?7.9:floor==="roof"?10.7:5.3; const r=rooms[room]; const target:V3=room==="all"?[0,y,0]:[r.x,y,r.z];
+ if(preset==="top")return{camera:[target[0]+.1,floor==="all"?30:y+16,target[2]+.1],target};
+ if(preset==="front")return{camera:[target[0],floor==="all"?8:y+2.1,24.5],target};
+ if(preset==="walk")return{camera:[target[0]-5.2,y+1.15,target[2]+6.6],target:[target[0],y+.55,target[2]]};
+ if(room!=="all"&&floor!=="all"&&floor!=="roof")return{camera:[target[0]+7.2,y+5,target[2]+7.5],target};
+ if(system==="electricity"||system==="grounding")return{camera:[18,12,18],target:[3.8,floor==="all"?5.3:y,-.3]};
+ if(system==="hvac")return{camera:[16,14,-18],target:[.5,floor==="all"?6.4:y,-1.4]};
+ if(system==="water"||system==="drainage")return{camera:[-18,12,16],target:[-1.3,floor==="all"?5.5:y,-1.2]};
+ return{camera:[20,14,23],target:[0,floor==="all"?5.1:y,0]};
 }
+function CameraRig({desired,nonce,controls}:{desired:Cam;nonce:number;controls:MutableRefObject<any>}){const{camera:c}=useThree();const active=useRef(1);const p=useMemo(()=>new THREE.Vector3(...desired.camera),[desired]);const t=useMemo(()=>new THREE.Vector3(...desired.target),[desired]);useEffect(()=>{active.current=1},[nonce,p,t]);useFrame(()=>{if(active.current<.008)return;c.position.lerp(p,.12);controls.current?.target.lerp(t,.12);controls.current?.update();active.current*=.84});return null}
+function P({p,s,c,o=1,r=.72,m=.02,rot=[0,0,0],click}:{p:V3;s:V3;c:string;o?:number;r?:number;m?:number;rot?:V3;click?:()=>void}){return <mesh position={p} rotation={rot} castShadow={o>.35} receiveShadow onClick={click?(e)=>{e.stopPropagation();click()}:undefined}><boxGeometry args={s}/><meshStandardMaterial color={c} transparent={o<1} opacity={o} roughness={r} metalness={m} depthWrite={o>.28}/></mesh>}
+function Soft({p,s,c,click}:{p:V3;s:V3;c:string;click?:()=>void}){return <RoundedBox args={s} radius={.07} smoothness={3} position={p} castShadow receiveShadow onClick={click?(e)=>{e.stopPropagation();click()}:undefined}><meshStandardMaterial color={c} roughness={.7}/></RoundedBox>}
+function Cyl({p,rad,h,c,rot=[0,0,0]}:{p:V3;rad:number;h:number;c:string;rot?:V3}){return <mesh position={p} rotation={rot} castShadow receiveShadow><cylinderGeometry args={[rad,rad,h,22]}/><meshStandardMaterial color={c} roughness={.48} metalness={.1}/></mesh>}
+function Pipe({pts,c,rad=.05,o=1,glow=false}:{pts:V3[];c:string;rad?:number;o?:number;glow?:boolean}){const curve=useMemo(()=>new THREE.CatmullRomCurve3(pts.map(x=>new THREE.Vector3(...x)),false,"catmullrom",.08),[pts]);return <mesh castShadow={o>.65}><tubeGeometry args={[curve,Math.max(22,pts.length*12),rad,9,false]}/><meshStandardMaterial color={c} transparent={o<1} opacity={o} roughness={.38} metalness={.12} emissive={glow?c:"#000"} emissiveIntensity={glow?.2:0} depthWrite={o>.25}/></mesh>}
+function Flow({pts,c,count=6,speed=.08}:{pts:V3[];c:string;count?:number;speed?:number}){const curve=useMemo(()=>new THREE.CatmullRomCurve3(pts.map(x=>new THREE.Vector3(...x)),false,"catmullrom",.08),[pts]);const ref=useRef<THREE.Group>(null);useFrame(({clock})=>{ref.current?.children.forEach((ch,i)=>ch.position.copy(curve.getPointAt((clock.elapsedTime*speed+i/count)%1)))});return <group ref={ref}>{Array.from({length:count},(_,i)=><mesh key={i}><sphereGeometry args={[.055,10,8]}/><meshStandardMaterial color={c} emissive={c} emissiveIntensity={.65}/></mesh>)}</group>}
+function Tag({p,code,title,detail,color=C.brand}:{p:V3;code:string;title:string;detail?:string;color?:string}){return <Html position={p} center distanceFactor={11} zIndexRange={[60,0]}><div className="studio-world-label pro" style={{"--label-color":color} as CSSProperties} dir="rtl"><span>{code}</span><strong>{title}</strong>{detail&&<small>{detail}</small>}</div></Html>}
 
-function BoxPart({
-  position,
-  size,
-  color,
-  opacity = 1,
-  roughness = 0.72,
-  metalness = 0.02,
-  rotation = [0, 0, 0],
-}: {
-  position: Vec3;
-  size: Vec3;
-  color: string;
-  opacity?: number;
-  roughness?: number;
-  metalness?: number;
-  rotation?: Vec3;
-}) {
-  return <mesh position={position} rotation={rotation} castShadow={opacity > 0.45} receiveShadow>
-    <boxGeometry args={size} />
-    <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} roughness={roughness} metalness={metalness} depthWrite={opacity > 0.35} />
-  </mesh>;
-}
+function RoomFurniture({base,room,onRoom}:{base:number;room:Room;onRoom:(r:Room)=>void}){const show=(r:Room)=>room==="all"||room===r;return <group>
+ {show("living")&&<group onClick={(e)=>{e.stopPropagation();onRoom("living")}}><P p={[-3.6,base+.05,2]} s={[4.8,.05,2.6]} c="#b99f82"/><Soft p={[-5.35,base+.42,1.7]} s={[.9,.6,2.9]} c="#8f857a"/><Soft p={[-3.8,base+.42,3.15]} s={[3.9,.6,.9]} c="#978b7f"/><Soft p={[-3.45,base+.32,1.9]} s={[1.7,.25,.95]} c="#8d6a50"/><P p={[-1.05,base+1.1,1.9]} s={[.12,1.45,2.8]} c="#263b37"/></group>}
+ {show("kitchen")&&<group onClick={(e)=>{e.stopPropagation();onRoom("kitchen")}}><P p={[3.6,base+.48,-.15]} s={[4.3,.92,.68]} c="#d6d0c4"/><P p={[5.95,base+.48,1.5]} s={[.68,.92,3.8]} c="#d6d0c4"/><Soft p={[3.55,base+.5,2]} s={[2.7,.94,1.05]} c="#c0ad90"/><Soft p={[5.3,base+1.05,-.15]} s={[.95,2.05,.72]} c="#707b78"/><P p={[2.55,base+.98,-.15]} s={[1,.05,.48]} c="#87a29d"/><P p={[4.05,base+.98,-.15]} s={[.9,.05,.46]} c="#273b37"/></group>}
+ {show("master")&&<Bedroom base={base} x={-4} z={-2.2} on={()=>onRoom("master")}/>} {show("bedroom")&&<Bedroom base={base} x={.55} z={-2.2} on={()=>onRoom("bedroom")}/>} 
+ {show("bath")&&<group onClick={(e)=>{e.stopPropagation();onRoom("bath")}}><Soft p={[4,base+.46,-3.1]} s={[1,.82,.5]} c="#d8d3ca"/><Cyl p={[5.1,base+.38,-3.05]} rad={.31} h={.45} c="#ece9e1"/><P p={[5.1,base+.08,-1.35]} s={[1.35,.12,1.35]} c="#a9c0c1"/><P p={[4.5,base+1,-1.35]} s={[.04,1.9,1.3]} c={C.glass} o={.3}/></group>}
+ </group>}
+function Bedroom({base,x,z,on}:{base:number;x:number;z:number;on:()=>void}){return <group onClick={(e)=>{e.stopPropagation();on()}}><Soft p={[x,base+.26,z]} s={[2.2,.42,1.7]} c="#8d6e57"/><Soft p={[x,base+.56,z]} s={[2.08,.28,1.62]} c="#eee9df"/><Soft p={[x,base+1,z-.82]} s={[2.2,1.15,.16]} c="#a18e81"/><Soft p={[x+1.5,base+1.05,z-.6]} s={[.65,2.05,1.18]} c="#baa48b"/></group>}
+function Window({x,y,z,side=false}:{x:number;y:number;z:number;side?:boolean}){return side?<group><P p={[x,y,z]} s={[.08,1.8,1.9]} c={C.frame} m={.3}/><P p={[x+.035,y,z]} s={[.035,1.55,1.65]} c={C.glass} o={.48}/></group>:<group><P p={[x,y,z]} s={[2.35,1.8,.08]} c={C.frame} m={.3}/><P p={[x,y,z+.035]} s={[2.1,1.55,.035]} c={C.glass} o={.48}/></group>}
+function FloorModel({level,base,opacity,cutaway,showFurniture,room,labels,onRoom}:{level:"ground"|"first"|"second";base:number;opacity:number;cutaway:boolean;showFurniture:boolean;room:Room;labels:boolean;onRoom:(r:Room)=>void}){const wy=base+1.45;const surface=(r:Exclude<Room,"all">,c:string)=>{const d=rooms[r];return <mesh key={r} position={[d.x,base+.06,d.z]} rotation={[-Math.PI/2,0,0]} onClick={(e)=>{e.stopPropagation();onRoom(r)}} receiveShadow><planeGeometry args={[d.w,d.d]}/><meshStandardMaterial color={c} transparent opacity={room===r?.35:.12} roughness={.92}/></mesh>};return <group>
+ <P p={[0,base,0]} s={[14.4,.28,10]} c={C.slab}/><P p={[0,wy,-4.86]} s={[14.2,2.8,.22]} c={C.wall} o={opacity}/><P p={[-7,wy,0]} s={[.22,2.8,9.55]} c={C.side} o={opacity}/><P p={[7,wy,0]} s={[.22,2.8,9.55]} c={C.side} o={opacity}/>
+ {!cutaway&&<><P p={[-5.55,wy,4.86]} s={[2.7,2.8,.22]} c={C.wall} o={opacity}/><P p={[5.55,wy,4.86]} s={[2.7,2.8,.22]} c={C.wall} o={opacity}/><P p={[0,wy,4.87]} s={[4.2,2.8,.2]} c={level==="ground"?C.stone:C.wall} o={opacity}/></>}
+ <Window x={-4.9} y={wy+.08} z={4.99}/><Window x={4.9} y={wy+.08} z={4.99}/>{level!=="ground"&&<Window x={0} y={wy+.08} z={4.99}/>}<Window x={-7.02} y={wy+.05} z={1.9} side/><Window x={7.02} y={wy+.05} z={-1.8} side/>
+ {level==="ground"?<><Soft p={[0,base+1.2,4.98]} s={[1.65,2.35,.12]} c="#775d47"/><P p={[0,base+2.62,5.4]} s={[3.5,.2,1.1]} c={C.stone2}/></>:<><P p={[0,base+.12,5.15]} s={[5,.18,1.35]} c="#bbb5ab"/><P p={[0,base+.85,5.78]} s={[4.7,1,.05]} c={C.glass} o={.4}/></>}
+ {showFurniture&&<><>{surface("living","#cdb28f")}{surface("kitchen","#a9c7bd")}{surface("master","#c8bbc7")}{surface("bedroom","#cfbfad")}{surface("bath","#a9c6cf")}</><P p={[.25,base+1.4,.08]} s={[.16,2.55,8.4]} c="#ded8cf" o={.82}/><P p={[-2.1,base+1.4,-.95]} s={[4.55,2.55,.16]} c="#ded8cf" o={.82}/><P p={[3.15,base+1.4,-.95]} s={[5.55,2.55,.16]} c="#ded8cf" o={.82}/><P p={[2.9,base+1.4,-2.4]} s={[.16,2.55,2.9]} c="#ded8cf" o={.82}/><RoomFurniture base={base} room={room} onRoom={onRoom}/>{labels&&room!=="all"&&<Tag p={[rooms[room].x,base+2.8,rooms[room].z]} code={rooms[room].short} title={rooms[room].label} detail="اختر نظامًا لتتبع خدمته"/>}</>}
+ </group>}
+function Site(){return <group><P p={[0,-.34,0]} s={[24,.36,18]} c="#c7c0b3"/><P p={[0,-.12,6.55]} s={[8.5,.08,4.2]} c="#999994"/><P p={[-9,-.08,1]} s={[3.4,.08,12]} c="#86a07d"/><P p={[9,-.08,-1]} s={[3.2,.08,10]} c="#809878"/>{[-8.6,8.6].map(x=><group key={x}><Cyl p={[x,.55,5.9]} rad={.14} h={1.15} c="#6d5942"/><mesh position={[x,1.45,5.9]} castShadow><sphereGeometry args={[.8,16,12]}/><meshStandardMaterial color={C.green}/></mesh></group>)}</group>}
+function Roof({base,opacity,cutaway}:{base:number;opacity:number;cutaway:boolean}){return <group><P p={[0,base,0]} s={[14.4,.28,10]} c="#bbb7ae"/><P p={[0,base+.55,-4.82]} s={[14.2,.9,.18]} c={C.side} o={opacity}/><P p={[-7,base+.55,0]} s={[.18,.9,9.5]} c={C.side} o={opacity}/><P p={[7,base+.55,0]} s={[.18,.9,9.5]} c={C.side} o={opacity}/>{!cutaway&&<P p={[0,base+.55,4.82]} s={[14.2,.9,.18]} c={C.wall} o={opacity}/>}<Soft p={[3.8,base+1.25,-2.2]} s={[4,2.4,3]} c="#d7d2c9"/></group>}
 
-function GlassPanel({ position, size, opacity = 0.5 }: { position: Vec3; size: Vec3; opacity?: number }) {
-  return <mesh position={position} castShadow receiveShadow>
-    <boxGeometry args={size} />
-    <meshPhysicalMaterial color={C.glass} transparent opacity={opacity} transmission={0.28} thickness={0.08} roughness={0.12} metalness={0.05} />
-  </mesh>;
-}
+const circuit:Record<Exclude<Room,"all">,V3[]>={living:[[5.35,1.55,-3.55],[2.4,1.55,-3.55],[.5,2.48,-.5],[-3.6,2.48,2]],kitchen:[[5.35,1.55,-3.55],[5,2.48,-.6],[3.65,2.48,2]],master:[[5.35,1.55,-3.55],[.8,2.48,-3.1],[-4,2.48,-2.2]],bedroom:[[5.35,1.55,-3.55],[2.6,2.48,-3.1],[.55,2.48,-2.2]],bath:[[5.35,1.55,-3.55],[4.7,2.48,-3.1],[4.55,2.48,-2.2]]};
+const shift=(pts:V3[],d:number):V3[]=>pts.map(([x,y,z])=>[x,y+d,z]);
+function Electrical({floor,room,labels}:{floor:Floor;room:Room;labels:boolean}){const levels:[Exclude<Floor,"all"|"roof">,number,string][]=[["ground",FY.ground,"DB-G"],["first",FY.first,"DB-01"],["second",FY.second,"DB-02"]];const riser:V3[]=[[6.4,1.6,3.5],[5.8,1.6,-3.65],[5.8,8.7,-3.65]];return <group><Soft p={[8.4,1.15,5.6]} s={[.8,1.5,.28]} c="#9a8f7f"/><Soft p={[6.4,1.55,3.5]} s={[.9,1.7,.36]} c={C.electric}/><Pipe pts={[[8.3,1.15,5.5],[7.3,1.15,5.1],[6.4,1.4,3.7]]} c={C.electric2} glow/><Flow pts={[[8.3,1.15,5.5],[7.3,1.15,5.1],[6.4,1.4,3.7]]} c={C.electric2}/><Pipe pts={riser} c={C.electric} rad={.065} glow/><Flow pts={riser} c={C.electric2} count={8}/>{levels.map(([key,base,db])=>floorVisible(floor,key)&&<group key={key}><Soft p={[5.35,base+1.4,-3.55]} s={[.55,.88,.24]} c="#927b42"/>{(Object.keys(circuit) as Exclude<Room,"all">[]).map(r=>{const on=room==="all"||room===r;const pts=shift(circuit[r],base-FY.ground);return <group key={r}><Pipe pts={pts} c={on?C.electric2:C.electric} rad={on?.045:.025} o={on?.98:.08} glow={on}/>{on&&room!=="all"&&<Flow pts={pts} c={C.electric2}/>}<Soft p={[rooms[r].x,base+2.48,rooms[r].z]} s={[.34,.08,.34]} c="#fff0ad"/></group>})}{labels&&<Tag p={[5.1,base+2.35,-3.55]} code={db} title="لوحة توزيع الدور" detail={room==="all"?"دوائر كل الغرف":`الدائرة → ${rl(room)}`} color={C.electric}/>}</group>)}{labels&&<><Tag p={[8.3,2.25,5.6]} code="MTR-01" title="عداد الخدمة" color={C.electric}/><Tag p={[6.4,2.8,3.5]} code="MDB-01" title="اللوحة الرئيسية" color={C.electric}/><Tag p={[5.8,7.2,-3.65]} code="E-RISER" title="رايزر الكهرباء" color={C.electric}/></>}</group>}
+function Grounding({floor,labels}:{floor:Floor;labels:boolean}){const ring:V3[]=[[-8.2,0,-5.9],[8.2,0,-5.9],[8.2,0,5.9],[-8.2,0,5.9],[-8.2,0,-5.9]];const riser:V3[]=[[6.25,.7,3.15],[6,1.1,-3.2],[6,8.6,-3.2]];return <group><Pipe pts={ring} c={C.ground} glow/>{ring.slice(0,4).map((p,i)=><Cyl key={i} p={[p[0],-.55,p[2]]} rad={.07} h={1.2} c="#8d6f50"/>)}<Soft p={[6.25,.72,3.15]} s={[.58,.36,.18]} c={C.ground}/><Pipe pts={[[8.2,0,5.9],[7.3,.25,4.4],[6.25,.72,3.15]]} c={C.ground}/><Pipe pts={riser} c={C.ground} glow/><Flow pts={riser} c="#abd3ad"/>{[["ground",FY.ground],["first",FY.first],["second",FY.second]].map(([k,b])=>{const key=k as Exclude<Floor,"all"|"roof">,base=b as number;return floorVisible(floor,key)?<Pipe key={key} pts={[[6,base+.7,-3.2],[5.35,base+.7,-3.55],[3.6,base+.7,2]]} c={C.ground} rad={.032}/>:null})}{labels&&<><Tag p={[-8.2,1,-5.9]} code="ER-01" title="قطب تأريض" color={C.ground}/><Tag p={[6.25,1.7,3.15]} code="MET-01" title="نقطة التأريض الرئيسية" color={C.ground}/><Tag p={[6,6.8,-3.2]} code="PE-RISER" title="موصل الحماية" color={C.ground}/></>}</group>}
+function HVAC({floor,room,labels}:{floor:Floor;room:Room;labels:boolean}){const levels:[Exclude<Floor,"all"|"roof">,number][]=[["ground",FY.ground],["first",FY.first],["second",FY.second]];return <group><Soft p={[-3,10.55,-1.9]} s={[2.1,.75,1.4]} c="#798c87"/><Soft p={[3.7,10.75,-2.15]} s={[2.45,1.35,1.65]} c="#869993"/><P p={[.9,5.6,-3.2]} s={[.76,8,.8]} c="#8eaaa3"/>{levels.map(([key,base])=>floorVisible(floor,key)&&<group key={key}><P p={[.65,base+2.45,-2.9]} s={[9.6,.36,.54]} c="#8eaaa3"/>{(Object.keys(circuit) as Exclude<Room,"all">[]).map(r=>{const d=rooms[r],on=room==="all"||room===r;const pts:V3[]=[[.65,base+2.45,-2.9],[d.x,base+2.45,-2.9],[d.x,base+2.45,d.z]];return <group key={r}><Pipe pts={pts} c={on?C.hvac2:C.hvac} rad={on?.045:.025} o={on?.95:.08} glow={on}/>{on&&room!=="all"&&<Flow pts={pts} c={C.hvac2}/>}<P p={[d.x,base+2.38,d.z]} s={[.85,.06,.36]} c="#d9ebe7" o={on?1:.18}/></group>})}{labels&&<Tag p={[.7,base+3,-2.65]} code={`SA-${key}`} title="دكت التغذية" detail={room==="all"?"فروع كل الغرف":`الفرع → ${rl(room)}`} color={C.hvac}/>}</group>)}{labels&&<><Tag p={[-3,11.7,-1.9]} code="RTU-01" title="وحدة سطحية" color={C.hvac}/><Tag p={[3.7,12,-2.15]} code="AHU-01" title="وحدة مناولة الهواء" color={C.hvac}/><Tag p={[.9,7.3,-3.2]} code="M-SHAFT" title="الشافت الميكانيكي" color={C.hvac}/></>}</group>}
+function Water({floor,room,labels}:{floor:Floor;room:Room;labels:boolean}){const levels:[Exclude<Floor,"all"|"roof">,number][]=[["ground",FY.ground],["first",FY.first],["second",FY.second]];const main:V3[]=[[-4.6,9.9,-2.4],[-3,9.9,-2.4],[-2.4,9.9,-2.4],[-2.4,.9,-2.4]];return <group><Cyl p={[-4.6,10.55,-2.4]} rad={.92} h={1.55} c="#86a5aa"/><Cyl p={[-3,9.95,-2.4]} rad={.25} h={.58} c="#668d93" rot={[Math.PI/2,0,0]}/><Pipe pts={main} c={C.water} rad={.07} glow/><Flow pts={main} c="#7bc7ee" count={8}/>{levels.map(([key,base])=>floorVisible(floor,key)&&<group key={key}><Pipe pts={[[-2.4,base+.9,-2.4],[3.6,base+.9,-2.4],[3.6,base+.65,1.9]]} c={C.water} o={room==="all"||room==="kitchen"?.98:.08}/><Pipe pts={[[-2.4,base+.9,-2.4],[4.55,base+.9,-2.4],[4.55,base+.7,-2.2]]} c={C.water} o={room==="all"||room==="bath"?.98:.08}/><Soft p={[4.65,base+1.42,-3.15]} s={[.58,.98,.46]} c="#b8aaa0"/><Pipe pts={[[4.65,base+1.4,-3.15],[3.9,base+1.35,-2.4],[3.9,base+.85,1.9]]} c={C.hot} rad={.038} o={room==="all"||room==="kitchen"||room==="bath"?.95:.08}/>{room==="kitchen"&&<Flow pts={[[-2.4,base+.9,-2.4],[3.6,base+.9,-2.4],[3.6,base+.65,1.9]]} c="#7bc7ee"/>}{room==="bath"&&<Flow pts={[[-2.4,base+.9,-2.4],[4.55,base+.9,-2.4],[4.55,base+.7,-2.2]]} c="#7bc7ee"/>}{labels&&<Tag p={[-2.1,base+2,-2.4]} code={`CW-${key}`} title="فرع مياه الدور" color={C.water}/>}</group>)}{labels&&<><Tag p={[-4.6,11.75,-2.4]} code="WT-01" title="خزان المياه" color={C.water}/><Tag p={[-3,10.8,-2.4]} code="P-01" title="مضخة التعزيز" color={C.water}/><Tag p={[-2.4,7.2,-2.4]} code="CW-RISER" title="رايزر المياه" color={C.water}/></>}</group>}
+function Drainage({floor,room,labels}:{floor:Floor;room:Room;labels:boolean}){const levels:[Exclude<Floor,"all"|"roof">,number][]=[["ground",FY.ground],["first",FY.first],["second",FY.second]];const stack:V3[]=[[-1.7,8.9,-2.4],[-1.7,.2,-2.4],[-1.7,-.05,-5.3],[-1.7,-.05,-7.3]];return <group><Pipe pts={stack} c={C.drain} rad={.09} glow/><Flow pts={stack} c="#b7c0be" count={7} speed={.05}/>{levels.map(([key,base])=>floorVisible(floor,key)&&<group key={key}><Pipe pts={[[3.6,base+.15,1.9],[3.6,base+.15,-2.4],[-1.7,base+.15,-2.4]]} c={C.drain} rad={.06} o={room==="all"||room==="kitchen"?.95:.08}/><Pipe pts={[[4.55,base+.15,-2.2],[-1.7,base+.15,-2.4]]} c={C.drain} rad={.065} o={room==="all"||room==="bath"?.95:.08}/>{room==="kitchen"&&<Flow pts={[[3.6,base+.15,1.9],[3.6,base+.15,-2.4],[-1.7,base+.15,-2.4]]} c="#b7c0be"/>}{room==="bath"&&<Flow pts={[[4.55,base+.15,-2.2],[-1.7,base+.15,-2.4]]} c="#b7c0be"/>}</group>)}<Soft p={[-1.7,.05,-7.3]} s={[1.05,.18,1.05]} c="#8e908b"/>{labels&&<><Tag p={[-1.7,6.7,-2.4]} code="SW-01" title="رايزر الصرف" color={C.drain}/><Tag p={[-1.7,1,-7.3]} code="MH-01" title="غرفة التفتيش" color={C.drain}/></>}</group>}
+function Scene({system,floor,room,labels,cutaway,exploded,onRoom}:{system:Sys;floor:Floor;room:Room;labels:boolean;cutaway:boolean;exploded:boolean;onRoom:(r:Room)=>void}){const service=system!=="architecture";const cut=cutaway||service||floor!=="all";const shell=system==="architecture"&&!cut?1:.14;const base=(k:keyof typeof FY)=>FY[k]+(exploded?(k==="ground"?0:k==="first"?1.4:k==="second"?2.8:4.2):0);const furniture=cut||exploded;return <><ambientLight intensity={.5}/><hemisphereLight intensity={.62} color="#f8fbfa" groundColor="#c5b79f"/><directionalLight castShadow position={[14,22,14]} intensity={2.35} shadow-mapSize-width={2048} shadow-mapSize-height={2048}/><directionalLight position={[-12,12,-10]} intensity={.7} color="#d9ebe6"/><Site/><FloorModel level="ground" base={base("ground")} opacity={floor==="all"||floor==="ground"?shell:.05} cutaway={cut} showFurniture={furniture&&(floor==="all"||floor==="ground")} room={room} labels={labels} onRoom={onRoom}/><FloorModel level="first" base={base("first")} opacity={floor==="all"||floor==="first"?shell:.05} cutaway={cut} showFurniture={furniture&&(floor==="all"||floor==="first")} room={room} labels={labels} onRoom={onRoom}/><FloorModel level="second" base={base("second")} opacity={floor==="all"||floor==="second"?shell:.05} cutaway={cut} showFurniture={furniture&&(floor==="all"||floor==="second")} room={room} labels={labels} onRoom={onRoom}/><Roof base={base("roof")} opacity={floor==="all"||floor==="roof"?shell:.06} cutaway={cut}/>{system==="electricity"&&<Electrical floor={floor} room={room} labels={labels}/>} {system==="grounding"&&<Grounding floor={floor} labels={labels}/>} {system==="hvac"&&<HVAC floor={floor} room={room} labels={labels}/>} {system==="water"&&<Water floor={floor} room={room} labels={labels}/>} {system==="drainage"&&<Drainage floor={floor} room={room} labels={labels}/>} {system==="architecture"&&labels&&!exploded&&<><Tag p={[0,4.9,5.9]} code="A-101" title="الواجهة الرئيسية" detail="حجر · زجاج · شرفات"/><Tag p={[3.8,12.2,-2]} code="A-301" title="غرفة خدمات السطح"/></>}<Grid position={[0,-.49,0]} args={[44,44]} cellSize={.5} cellThickness={.38} cellColor="#b8c5c1" sectionSize={2} sectionThickness={.75} sectionColor="#8ba39b" fadeDistance={38} infiniteGrid/><ContactShadows position={[0,-.43,0]} opacity={.34} scale={36} blur={2.4} far={24}/></>}
+function Viewer({system,floor,room,labels,preset,nonce,cutaway,exploded,focus,onRoom}:{system:Sys;floor:Floor;room:Room;labels:boolean;preset:Preset;nonce:number;cutaway:boolean;exploded:boolean;focus:V3|null;onRoom:(r:Room)=>void}){const controls=useRef<any>(null);const desired=useMemo(()=>camera(system,floor,room,preset,focus),[system,floor,room,preset,focus]);return <Canvas shadows dpr={[1,1.7]} gl={{antialias:true,powerPreference:"high-performance"}} camera={{position:desired.camera,fov:33,near:.1,far:180}} onCreated={({gl})=>{gl.toneMapping=THREE.ACESFilmicToneMapping;gl.toneMappingExposure=1.03;gl.outputColorSpace=THREE.SRGBColorSpace}}><color attach="background" args={["#e7eeeb"]}/><fog attach="fog" args={["#e7eeeb",38,76]}/><CameraRig desired={desired} nonce={nonce} controls={controls}/><Scene system={system} floor={floor} room={room} labels={labels} cutaway={cutaway} exploded={exploded} onRoom={onRoom}/><OrbitControls ref={controls} makeDefault enableDamping dampingFactor={.075} minDistance={4.4} maxDistance={46} minPolarAngle={.1} maxPolarAngle={Math.PI/2.02} screenSpacePanning enablePan/></Canvas>}
+function note(s:Sys,r:Room){if(r==="all")return"اختر غرفة من الشريط أو من داخل المجسم لعزل فرعها الهندسي.";if(s==="electricity")return`${rl(r)}: المسار المضيء من لوحة الدور حتى دائرة الغرفة.`;if(s==="hvac")return`${rl(r)}: فرع الدكت ومخرج الهواء الخاص بالمساحة.`;if(s==="water")return r==="kitchen"||r==="bath"?`${rl(r)}: فرع المياه الباردة والساخنة.`:`${rl(r)} لا تحتوي نقطة مياه مباشرة في النموذج.`;if(s==="drainage")return r==="kitchen"||r==="bath"?`${rl(r)}: خط الصرف حتى الرايزر.`:`${rl(r)} لا تحتوي نقطة صرف مباشرة في النموذج.`;if(s==="grounding")return"التأريض نظام حماية مشترك: الحلقة الأرضية ← MET ← PE ← اللوحات.";return`${rl(r)}: استخدم المقطع لرؤية الأثاث والتقسيمات.`}
 
-function TubeRoute({ points, radius, color, opacity = 1 }: { points: Vec3[]; radius: number; color: string; opacity?: number }) {
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p))), [points]);
-  return <mesh castShadow={opacity > 0.7}>
-    <tubeGeometry args={[curve, Math.max(24, points.length * 12), radius, 10, false]} />
-    <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} roughness={0.4} metalness={0.18} depthWrite={opacity > 0.35} />
-  </mesh>;
-}
-
-function Label({ position, code, title, detail, color = C.brand }: { position: Vec3; code: string; title: string; detail?: string; color?: string }) {
-  return <Html position={position} center distanceFactor={12} zIndexRange={[50, 0]}>
-    <div className="studio-world-label" style={{ "--label-color": color } as React.CSSProperties} dir="rtl">
-      <span>{code}</span>
-      <strong>{title}</strong>
-      {detail && <small>{detail}</small>}
-    </div>
-  </Html>;
-}
-
-function WindowModule({ x, y, z, width = 2.15, shellOpacity = 1 }: { x: number; y: number; z: number; width?: number; shellOpacity?: number }) {
-  const frameOpacity = Math.max(shellOpacity, 0.55);
-  return <group>
-    <BoxPart position={[x, y, z]} size={[width + 0.28, 1.78, 0.08]} color={C.frame} opacity={frameOpacity} metalness={0.28} roughness={0.36} />
-    <GlassPanel position={[x, y, z + 0.035]} size={[width, 1.54, 0.045]} opacity={Math.max(0.18, shellOpacity * 0.48)} />
-    <BoxPart position={[x, y, z + 0.075]} size={[0.045, 1.55, 0.06]} color={C.frame} opacity={frameOpacity} metalness={0.3} roughness={0.34} />
-    <BoxPart position={[x, y, z + 0.075]} size={[width, 0.045, 0.06]} color={C.frame} opacity={frameOpacity} metalness={0.3} roughness={0.34} />
-  </group>;
-}
-
-function Balcony({ y, shellOpacity }: { y: number; shellOpacity: number }) {
-  return <group>
-    <BoxPart position={[0, y, 5.05]} size={[4.8, 0.18, 1.25]} color={C.concrete} opacity={shellOpacity} />
-    <GlassPanel position={[0, y + 0.72, 5.62]} size={[4.5, 1.0, 0.06]} opacity={Math.max(0.16, shellOpacity * 0.4)} />
-    {[-2.3, -1.15, 0, 1.15, 2.3].map((x) => <BoxPart key={x} position={[x, y + 0.72, 5.64]} size={[0.045, 1.05, 0.05]} color={C.frame} opacity={Math.max(shellOpacity, 0.45)} metalness={0.45} roughness={0.28} />)}
-    <BoxPart position={[0, y + 1.23, 5.64]} size={[4.65, 0.055, 0.055]} color={C.frame} opacity={Math.max(shellOpacity, 0.45)} metalness={0.45} roughness={0.28} />
-  </group>;
-}
-
-function InteriorPlan({ baseY, opacity }: { baseY: number; opacity: number }) {
-  const y = baseY + 1.38;
-  return <group>
-    <BoxPart position={[0.3, y, 0.2]} size={[0.16, 2.55, 8.0]} color="#ded8cf" opacity={opacity} />
-    <BoxPart position={[-2.2, y, -1.25]} size={[4.9, 2.55, 0.16]} color="#ded8cf" opacity={opacity} />
-    <BoxPart position={[3.1, y, -1.25]} size={[5.4, 2.55, 0.16]} color="#ded8cf" opacity={opacity} />
-    <BoxPart position={[2.85, y, -2.7]} size={[0.16, 2.55, 2.8]} color="#ded8cf" opacity={opacity} />
-    <BoxPart position={[-4.2, baseY + 0.12, 1.7]} size={[3.1, 0.05, 2.0]} color="#bda98f" opacity={opacity * 0.82} />
-    <BoxPart position={[3.5, baseY + 0.12, 1.4]} size={[3.4, 0.05, 2.2]} color="#b8c9c4" opacity={opacity * 0.82} />
-  </group>;
-}
-
-function FloorArchitecture({ level, baseY, shellOpacity, selected, cutaway }: { level: "ground" | "first" | "second"; baseY: number; shellOpacity: number; selected: boolean; cutaway: boolean }) {
-  const wallY = baseY + 1.46;
-  const floorOpacity = selected ? 1 : Math.max(0.18, shellOpacity);
-  return <group>
-    <BoxPart position={[0, baseY, 0]} size={[14.4, 0.28, 10.0]} color={C.slab} opacity={floorOpacity} roughness={0.86} />
-    <BoxPart position={[0, wallY, -4.86]} size={[14.2, 2.8, 0.22]} color={C.stucco} opacity={shellOpacity} />
-    <BoxPart position={[-7.0, wallY, 0]} size={[0.22, 2.8, 9.55]} color={C.stuccoSide} opacity={shellOpacity} />
-    <BoxPart position={[7.0, wallY, 0]} size={[0.22, 2.8, 9.55]} color={C.stuccoSide} opacity={shellOpacity} />
-
-    {!cutaway && <>
-      <BoxPart position={[-5.55, wallY, 4.86]} size={[2.7, 2.8, 0.22]} color={C.stucco} opacity={shellOpacity} />
-      <BoxPart position={[5.55, wallY, 4.86]} size={[2.7, 2.8, 0.22]} color={C.stucco} opacity={shellOpacity} />
-      <BoxPart position={[0, wallY, 4.87]} size={[4.2, 2.8, 0.2]} color={level === "ground" ? C.stone : C.stucco} opacity={shellOpacity} />
-    </>}
-
-    {level === "ground" ? <>
-      <WindowModule x={-4.9} y={wallY + 0.1} z={4.99} width={2.0} shellOpacity={shellOpacity} />
-      <WindowModule x={4.85} y={wallY + 0.1} z={4.99} width={2.0} shellOpacity={shellOpacity} />
-      <BoxPart position={[0, baseY + 1.23, 4.98]} size={[1.65, 2.38, 0.12]} color="#765d47" opacity={Math.max(shellOpacity, 0.45)} roughness={0.44} />
-      <BoxPart position={[0, baseY + 2.58, 5.35]} size={[3.2, 0.18, 1.05]} color={C.stoneDark} opacity={shellOpacity} />
-      <BoxPart position={[0, baseY + 2.46, 5.88]} size={[2.85, 0.07, 0.12]} color={C.frame} opacity={shellOpacity} metalness={0.35} roughness={0.3} />
-      <BoxPart position={[6.2, baseY + 1.4, 4.96]} size={[0.8, 2.8, 0.28]} color={C.stone} opacity={shellOpacity} />
-    </> : <>
-      <WindowModule x={-4.95} y={wallY + 0.08} z={4.99} width={2.1} shellOpacity={shellOpacity} />
-      <WindowModule x={4.95} y={wallY + 0.08} z={4.99} width={2.1} shellOpacity={shellOpacity} />
-      <WindowModule x={0} y={wallY + 0.08} z={4.99} width={2.4} shellOpacity={shellOpacity} />
-      <Balcony y={baseY + 0.12} shellOpacity={shellOpacity} />
-      <BoxPart position={[6.2, wallY, 4.96]} size={[0.8, 2.8, 0.28]} color={C.stone} opacity={shellOpacity} />
-    </>}
-
-    <WindowModule x={-6.98} y={wallY + 0.05} z={1.8} width={1.5} shellOpacity={shellOpacity} />
-    <WindowModule x={6.98} y={wallY + 0.05} z={-1.8} width={1.5} shellOpacity={shellOpacity} />
-    <InteriorPlan baseY={baseY} opacity={selected || cutaway ? 0.7 : 0.28} />
-  </group>;
-}
-
-function RoofArchitecture({ shellOpacity, cutaway }: { shellOpacity: number; cutaway: boolean }) {
-  const y = 9.34;
-  return <group>
-    <BoxPart position={[0, y, 0]} size={[14.4, 0.28, 10.0]} color={C.concrete} opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[0, y + 0.55, -4.82]} size={[14.2, 0.9, 0.18]} color={C.stuccoSide} opacity={shellOpacity} />
-    <BoxPart position={[-7.0, y + 0.55, 0]} size={[0.18, 0.9, 9.5]} color={C.stuccoSide} opacity={shellOpacity} />
-    <BoxPart position={[7.0, y + 0.55, 0]} size={[0.18, 0.9, 9.5]} color={C.stuccoSide} opacity={shellOpacity} />
-    {!cutaway && <BoxPart position={[0, y + 0.55, 4.82]} size={[14.2, 0.9, 0.18]} color={C.stucco} opacity={shellOpacity} />}
-    <BoxPart position={[3.9, y + 1.25, -2.2]} size={[4.0, 2.4, 3.0]} color="#d7d2c9" opacity={Math.max(shellOpacity, 0.38)} />
-    <BoxPart position={[3.9, y + 2.5, -2.2]} size={[4.35, 0.16, 3.35]} color={C.concrete} opacity={Math.max(shellOpacity, 0.42)} />
-  </group>;
-}
-
-function SiteArchitecture({ shellOpacity }: { shellOpacity: number }) {
-  return <group>
-    <BoxPart position={[0, -0.32, 0]} size={[22, 0.36, 17]} color="#c8c1b4" opacity={1} roughness={0.95} />
-    <BoxPart position={[0, -0.12, 6.4]} size={[8.2, 0.08, 4.0]} color="#9f9d98" opacity={1} roughness={0.9} />
-    <BoxPart position={[-8.6, -0.08, 1.0]} size={[3.2, 0.08, 11.0]} color="#8aa07f" opacity={0.9} roughness={0.95} />
-    <BoxPart position={[8.7, -0.08, -1.0]} size={[3.0, 0.08, 9.0]} color="#839b7a" opacity={0.9} roughness={0.95} />
-    <BoxPart position={[0, 0.72, -7.9]} size={[21.2, 1.5, 0.18]} color="#c9c1b5" opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[-10.5, 0.72, 0]} size={[0.18, 1.5, 15.6]} color="#c9c1b5" opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[10.5, 0.72, 0]} size={[0.18, 1.5, 15.6]} color="#c9c1b5" opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[-6.2, 0.72, 7.8]} size={[8.0, 1.5, 0.18]} color="#c9c1b5" opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[6.2, 0.72, 7.8]} size={[8.0, 1.5, 0.18]} color="#c9c1b5" opacity={Math.max(shellOpacity, 0.45)} />
-    <BoxPart position={[0, 1.05, 7.82]} size={[4.2, 1.9, 0.12]} color={C.frame} opacity={Math.max(shellOpacity, 0.5)} metalness={0.45} roughness={0.28} />
-    {[-8.2, 8.2].map((x) => <group key={x}>
-      <mesh position={[x, 0.5, 5.5]} castShadow>
-        <cylinderGeometry args={[0.12, 0.16, 1.1, 12]} />
-        <meshStandardMaterial color="#6f5a43" roughness={0.9} />
-      </mesh>
-      <mesh position={[x, 1.35, 5.5]} castShadow>
-        <sphereGeometry args={[0.72, 18, 14]} />
-        <meshStandardMaterial color={C.green} roughness={0.92} />
-      </mesh>
-    </group>)}
-  </group>;
-}
-
-function ElectricalSystem({ floor, labels }: { floor: FloorKey; labels: boolean }) {
-  const showFloor = (key: FloorKey) => floor === "all" || floor === key;
-  const floorLevels: Array<[Exclude<FloorKey, "all" | "roof">, number, string]> = [
-    ["ground", 0.18, "DB-G"],
-    ["first", 3.23, "DB-01"],
-    ["second", 6.28, "DB-02"],
-  ];
-
-  return <group>
-    <BoxPart position={[8.35, 1.0, 5.55]} size={[0.85, 1.5, 0.28]} color="#9a8f7f" roughness={0.52} metalness={0.18} />
-    <BoxPart position={[6.35, 1.42, 3.82]} size={[0.85, 1.65, 0.34]} color={C.electric} roughness={0.45} metalness={0.28} />
-    <TubeRoute points={[[8.25, 1.0, 5.45], [7.2, 1.0, 5.1], [6.35, 1.2, 3.95]]} radius={0.055} color={C.electric2} />
-    <TubeRoute points={[[6.35, 1.65, 3.6], [5.95, 1.65, 3.2], [5.95, 8.2, 3.2], [5.95, 9.7, 1.8]]} radius={0.07} color={C.electric} />
-    <BoxPart position={[5.95, 5.0, 3.2]} size={[0.45, 8.0, 0.45]} color="#6b6559" opacity={0.16} />
-
-    {floorLevels.map(([key, base, code]) => showFloor(key) && <group key={key}>
-      <BoxPart position={[5.62, base + 1.25, 3.0]} size={[0.48, 0.78, 0.2]} color={C.electric} roughness={0.42} metalness={0.28} />
-      <TubeRoute points={[[5.75, base + 2.35, 3.15], [3.5, base + 2.35, 3.15], [0.2, base + 2.35, 3.15], [-4.9, base + 2.35, 3.15], [-4.9, base + 2.35, -3.3], [3.8, base + 2.35, -3.3]]} radius={0.035} color={C.electric2} />
-      {[-4.7, -1.6, 1.6, 4.7].map((x, i) => <group key={x}>
-        <TubeRoute points={[[x, base + 2.35, 3.1], [x, base + 0.65, 3.1]]} radius={0.018} color={C.electric2} opacity={0.94} />
-        <BoxPart position={[x, base + 0.62, 3.98]} size={[0.13, 0.22, 0.05]} color={C.electric} roughness={0.4} metalness={0.14} />
-        {i % 2 === 0 && <BoxPart position={[x, base + 2.55, 0.2]} size={[0.65, 0.04, 0.65]} color="#f5e6ad" opacity={0.92} />}
-      </group>)}
-      {labels && <Label position={[5.2, base + 2.35, 3.15]} code={code} title="لوحة توزيع الدور" detail="إنارة · مخارج · خدمات" color={C.electric} />}
-    </group>)}
-
-    {labels && <>
-      <Label position={[8.35, 2.1, 5.55]} code="MTR-01" title="عداد الخدمة" detail="نقطة دخول التغذية" color={C.electric} />
-      <Label position={[6.35, 2.7, 3.82]} code="MDB-01" title="اللوحة الرئيسية" detail="Main Distribution Board" color={C.electric} />
-      <Label position={[5.95, 7.7, 3.2]} code="E-RISER-01" title="رايزر الكهرباء" detail="مسار رأسي بين الأدوار" color={C.electric} />
-    </>}
-  </group>;
-}
-
-function Duct({ position, size, opacity = 1 }: { position: Vec3; size: Vec3; opacity?: number }) {
-  return <BoxPart position={position} size={size} color={C.hvac} opacity={opacity} metalness={0.22} roughness={0.38} />;
-}
-
-function FanUnit({ position, code, labels }: { position: Vec3; code: string; labels: boolean }) {
-  return <group>
-    <BoxPart position={position} size={[2.0, 1.0, 1.35]} color="#778782" metalness={0.25} roughness={0.42} />
-    <mesh position={[position[0], position[1] + 0.52, position[2]]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-      <cylinderGeometry args={[0.46, 0.46, 0.08, 28]} />
-      <meshStandardMaterial color="#46514e" roughness={0.45} metalness={0.36} />
-    </mesh>
-    {labels && <Label position={[position[0], position[1] + 1.45, position[2]]} code={code} title="وحدة تكثيف" detail="Rooftop condensing unit" color={C.hvac} />}
-  </group>;
-}
-
-function HvacSystem({ floor, labels }: { floor: FloorKey; labels: boolean }) {
-  const showFloor = (key: FloorKey) => floor === "all" || floor === key;
-  const levels: Array<[Exclude<FloorKey, "all" | "roof">, number]> = [
-    ["ground", 0.18],
-    ["first", 3.23],
-    ["second", 6.28],
-  ];
-  return <group>
-    <FanUnit position={[-3.6, 10.18, -1.9]} code="RTU-01" labels={labels} />
-    <FanUnit position={[-0.95, 10.18, -1.9]} code="RTU-02" labels={labels} />
-    <BoxPart position={[3.9, 10.25, -2.15]} size={[2.4, 1.3, 1.55]} color="#83958f" metalness={0.18} roughness={0.42} />
-    <TubeRoute points={[[-2.0, 10.2, -1.9], [1.4, 10.2, -1.9], [2.7, 10.25, -2.15]]} radius={0.055} color={C.hvac2} />
-    <Duct position={[1.0, 8.2, -3.15]} size={[0.72, 5.7, 0.78]} opacity={0.9} />
-
-    {levels.map(([key, base]) => showFloor(key) && <group key={key}>
-      <Duct position={[0.6, base + 2.35, -2.9]} size={[8.8, 0.36, 0.52]} />
-      <Duct position={[-3.8, base + 2.35, 0.1]} size={[0.46, 0.34, 6.1]} />
-      <Duct position={[2.5, base + 2.35, 0.35]} size={[0.46, 0.34, 6.6]} />
-      {[
-        [-3.8, base + 2.32, 2.35], [-3.8, base + 2.32, -2.25],
-        [2.5, base + 2.32, 2.35], [2.5, base + 2.32, -2.25],
-      ].map((p, i) => <BoxPart key={i} position={p as Vec3} size={[0.95, 0.05, 0.38]} color="#d9ebe7" metalness={0.08} roughness={0.32} />)}
-      <Line points={[[0.6, base + 2.58, -2.9], [0.6, base + 2.58, 2.8]]} color={C.hvac2} lineWidth={1.7} transparent opacity={0.75} />
-      {labels && <Label position={[0.7, base + 3.0, -2.7]} code={`SA-${key === "ground" ? "G" : key === "first" ? "01" : "02"}`} title="دكت التغذية الرئيسي" detail="Supply air → branch ducts → diffusers" color={C.hvac} />}
-    </group>)}
-
-    {labels && <>
-      <Label position={[3.9, 11.45, -2.15]} code="AHU-01" title="وحدة مناولة الهواء" detail="غرفة خدمات السطح" color={C.hvac} />
-      <Label position={[1.0, 7.2, -3.15]} code="M-SHAFT-01" title="شافت ميكانيكي" detail="نزول الدكت الرئيسي" color={C.hvac} />
-    </>}
-  </group>;
-}
-
-function PlumbingSystem({ floor, labels }: { floor: FloorKey; labels: boolean }) {
-  const showFloor = (key: FloorKey) => floor === "all" || floor === key;
-  const levels: Array<[Exclude<FloorKey, "all" | "roof">, number]> = [
-    ["ground", 0.18],
-    ["first", 3.23],
-    ["second", 6.28],
-  ];
-  return <group>
-    <mesh position={[-4.7, 10.45, -2.45]} castShadow receiveShadow>
-      <cylinderGeometry args={[0.9, 0.9, 1.5, 32]} />
-      <meshStandardMaterial color="#8ba5aa" roughness={0.5} metalness={0.15} />
-    </mesh>
-    <mesh position={[-3.0, 9.75, -2.45]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-      <cylinderGeometry args={[0.24, 0.24, 0.55, 24]} />
-      <meshStandardMaterial color="#6b8f94" roughness={0.46} metalness={0.22} />
-    </mesh>
-    <TubeRoute points={[[-4.7, 9.8, -2.45], [-3.0, 9.8, -2.45], [-2.4, 9.8, -2.45], [-2.4, 1.0, -2.45]]} radius={0.065} color={C.water} />
-    <TubeRoute points={[[-1.8, 8.8, -2.45], [-1.8, 0.2, -2.45], [-1.8, -0.1, -5.8], [-1.8, -0.1, -8.0]]} radius={0.085} color={C.drain} />
-
-    {levels.map(([key, base]) => showFloor(key) && <group key={key}>
-      <TubeRoute points={[[-2.4, base + 1.0, -2.45], [3.6, base + 1.0, -2.45], [3.6, base + 0.65, 1.3], [5.0, base + 0.65, 1.3]]} radius={0.045} color={C.water} />
-      <TubeRoute points={[[-2.4, base + 1.0, -2.45], [-4.1, base + 1.0, -2.45], [-4.1, base + 0.65, 1.6]]} radius={0.042} color={C.water} />
-      <BoxPart position={[4.65, base + 1.4, -3.2]} size={[0.55, 0.95, 0.45]} color="#b9aaa0" metalness={0.08} roughness={0.48} />
-      <TubeRoute points={[[4.65, base + 1.4, -3.2], [3.8, base + 1.35, -2.45], [3.8, base + 1.35, 1.3]]} radius={0.038} color={C.hot} />
-      <TubeRoute points={[[5.0, base + 0.18, 1.3], [5.0, base + 0.18, -2.45], [-1.8, base + 0.18, -2.45]]} radius={0.055} color={C.drain} />
-      {labels && <Label position={[-2.15, base + 2.0, -2.45]} code={`CW-${key === "ground" ? "G" : key === "first" ? "01" : "02"}`} title="فرع مياه الدور" detail="Cold water branch" color={C.water} />}
-    </group>)}
-
-    {labels && <>
-      <Label position={[-4.7, 11.55, -2.45]} code="WT-01" title="خزان المياه" detail="خزان علوي للمشهد التجريبي" color={C.water} />
-      <Label position={[-3.0, 10.7, -2.45]} code="P-01" title="مضخة تعزيز" detail="Booster pump" color={C.water} />
-      <Label position={[-2.4, 7.4, -2.45]} code="CW-RISER" title="رايزر مياه باردة" detail="يغذي الأدوار الثلاثة" color={C.water} />
-      <Label position={[-1.8, 6.7, -2.45]} code="SW-RISER" title="رايزر صرف" detail="إلى خط الصرف بالموقع" color={C.drain} />
-    </>}
-  </group>;
-}
-
-function SystemLegend({ system }: { system: SystemKey }) {
-  if (system === "architecture") return null;
-  const info = systemInfo[system];
-  return <Html position={[-8.3, 10.8, 4.9]} transform={false} zIndexRange={[40, 0]}>
-    <div className="studio-scene-legend" dir="rtl">
-      <span style={{ background: info.color }} />
-      <div><small>{info.english}</small><strong>{info.label}</strong></div>
-    </div>
-  </Html>;
-}
-
-function BuildingScene({ system, floor, labels }: { system: SystemKey; floor: FloorKey; labels: boolean }) {
-  const cutaway = system !== "architecture";
-  const shellOpacity = system === "architecture" ? 1 : 0.14;
-  const selectedFloor = (key: FloorKey) => floor === "all" || floor === key;
-
-  return <>
-    <ambientLight intensity={0.52} />
-    <hemisphereLight intensity={0.5} color="#f7faf8" groundColor="#c5b7a2" />
-    <directionalLight castShadow position={[13, 20, 12]} intensity={2.2} shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={1} shadow-camera-far={55} shadow-camera-left={-22} shadow-camera-right={22} shadow-camera-top={22} shadow-camera-bottom={-22} />
-    <directionalLight position={[-12, 12, -9]} intensity={0.55} color="#d9ebe6" />
-
-    <SiteArchitecture shellOpacity={shellOpacity} />
-    <FloorArchitecture level="ground" baseY={floorY.ground} shellOpacity={selectedFloor("ground") ? shellOpacity : 0.07} selected={floor === "ground" || floor === "all"} cutaway={cutaway} />
-    <FloorArchitecture level="first" baseY={floorY.first} shellOpacity={selectedFloor("first") ? shellOpacity : 0.07} selected={floor === "first" || floor === "all"} cutaway={cutaway} />
-    <FloorArchitecture level="second" baseY={floorY.second} shellOpacity={selectedFloor("second") ? shellOpacity : 0.07} selected={floor === "second" || floor === "all"} cutaway={cutaway} />
-    <RoofArchitecture shellOpacity={selectedFloor("roof") ? shellOpacity : 0.08} cutaway={cutaway} />
-
-    {system === "electricity" && <ElectricalSystem floor={floor} labels={labels} />}
-    {system === "hvac" && <HvacSystem floor={floor} labels={labels} />}
-    {system === "plumbing" && <PlumbingSystem floor={floor} labels={labels} />}
-
-    {system === "architecture" && labels && <>
-      <Label position={[0, 4.7, 5.8]} code="A-101" title="الواجهة الرئيسية" detail="حجر · زجاج · شرفات" />
-      <Label position={[4.0, 12.25, -2.1]} code="A-301" title="غرفة خدمات السطح" detail="MEP service room" />
-      <Label position={[0, 2.2, 6.1]} code="A-001" title="المدخل الرئيسي" detail="مدخل مظلل + بوابة الموقع" />
-    </>}
-    <SystemLegend system={system} />
-
-    <Grid position={[0, -0.48, 0]} args={[42, 42]} cellSize={0.5} cellThickness={0.38} cellColor="#b8c5c1" sectionSize={2} sectionThickness={0.75} sectionColor="#8ba39b" fadeDistance={36} fadeStrength={1.1} infiniteGrid />
-    <ContactShadows position={[0, -0.42, 0]} opacity={0.32} scale={35} blur={2.2} far={22} />
-  </>;
-}
-
-function resolveCamera(system: SystemKey, floor: FloorKey, preset: ViewPreset): CameraTarget {
-  const y = floor === "ground" ? 1.7 : floor === "first" ? 4.7 : floor === "second" ? 7.75 : floor === "roof" ? 10.3 : 5.2;
-  if (preset === "top") return { camera: [0.2, 29, 0.2], target: [0, floor === "all" ? 4.7 : y, 0] };
-  if (preset === "front") return { camera: [0, floor === "all" ? 7.4 : y + 1.5, 25], target: [0, y, 0] };
-  if (preset === "walk") return { camera: [-8.4, Math.max(2.1, y), 9.8], target: [0, y - 0.2, 0] };
-  if (system === "electricity") return { camera: [18.5, 11.8, 18], target: [3.4, y, 0.8] };
-  if (system === "hvac") return { camera: [15.5, 14.8, -18.5], target: [0.6, floor === "all" ? 6.2 : y + 0.7, -1.5] };
-  if (system === "plumbing") return { camera: [-18.5, 12.6, 16.5], target: [-1.5, floor === "all" ? 5.8 : y, -1.2] };
-  return { camera: [20.5, 13.8, 23], target: [0, floor === "all" ? 4.7 : y, 0] };
-}
-
-function StudioCanvas({ system, floor, labels, preset, nonce }: { system: SystemKey; floor: FloorKey; labels: boolean; preset: ViewPreset; nonce: number }) {
-  const controlsRef = useRef<any>(null);
-  const desired = useMemo(() => resolveCamera(system, floor, preset), [system, floor, preset]);
-  return <Canvas
-    shadows
-    dpr={[1, 1.7]}
-    gl={{ antialias: true, powerPreference: "high-performance" }}
-    camera={{ position: desired.camera, fov: 34, near: 0.1, far: 150 }}
-    onCreated={({ gl }) => {
-      gl.toneMapping = THREE.ACESFilmicToneMapping;
-      gl.toneMappingExposure = 1.02;
-      gl.outputColorSpace = THREE.SRGBColorSpace;
-    }}
-  >
-    <color attach="background" args={["#e8eeeb"]} />
-    <fog attach="fog" args={["#e8eeeb", 34, 68]} />
-    <CameraRig desired={desired} nonce={nonce} controlsRef={controlsRef} />
-    <BuildingScene system={system} floor={floor} labels={labels} />
-    <OrbitControls ref={controlsRef} makeDefault enableDamping dampingFactor={0.075} minDistance={6} maxDistance={42} minPolarAngle={0.12} maxPolarAngle={Math.PI / 2.04} screenSpacePanning enablePan />
-  </Canvas>;
-}
-
-export function DigitalTwinStudioPage() {
-  const [system, setSystem] = useState<SystemKey>("architecture");
-  const [floor, setFloor] = useState<FloorKey>("all");
-  const [preset, setPreset] = useState<ViewPreset>("iso");
-  const [labels, setLabels] = useState(true);
-  const [nonce, setNonce] = useState(0);
-  const info = systemInfo[system];
-
-  const selectSystem = (next: SystemKey) => {
-    setSystem(next);
-    setPreset(next === "architecture" ? "iso" : "front");
-    setLabels(true);
-    setNonce((n) => n + 1);
-  };
-
-  return <main className="twin-studio-page" dir="rtl">
-    <header className="twin-studio-topbar">
-      <div className="twin-studio-brand">
-        <Link href="/unit" className="twin-studio-back"><ArrowLeft size={17} /> العودة لمسكني</Link>
-        <div><small>DIGITAL TWIN · ENGINEERING VIEW</small><h1>التوأم الرقمي الهندسي</h1><p>نموذج 3D مولّد لشرح المعماري ومسارات MEP داخل مبنى سكني كامل.</p></div>
-      </div>
-      <div className="twin-studio-warning"><Info size={16} /><span>تصور تجريبي مولّد — ليس مخطط تنفيذ أو اعتماد هندسي.</span></div>
-    </header>
-
-    <nav className="twin-studio-system-nav" aria-label="أنظمة المبنى">
-      {(Object.keys(systemInfo) as SystemKey[]).map((key) => {
-        const Icon = key === "architecture" ? Building2 : key === "electricity" ? Zap : key === "hvac" ? Wind : Droplets;
-        return <button key={key} className={system === key ? "active" : ""} onClick={() => selectSystem(key)} style={{ "--system-color": systemInfo[key].color } as React.CSSProperties}>
-          <Icon size={18} /><span><small>{systemInfo[key].english}</small><strong>{systemInfo[key].label}</strong></span>
-        </button>;
-      })}
-    </nav>
-
-    <section className="twin-studio-workspace">
-      <div className="twin-studio-viewer">
-        <div className="twin-studio-viewbar">
-          <div className="twin-studio-floor-tabs" aria-label="اختيار الدور">
-            {floorMeta.map((item) => <button key={item.key} className={floor === item.key ? "active" : ""} onClick={() => { setFloor(item.key); setNonce((n) => n + 1); }}><b>{item.short}</b><span>{item.label}</span></button>)}
-          </div>
-          <div className="twin-studio-camera-actions">
-            <button className={preset === "iso" ? "active" : ""} onClick={() => { setPreset("iso"); setNonce((n) => n + 1); }}><Maximize2 size={15} /> منظور</button>
-            <button className={preset === "top" ? "active" : ""} onClick={() => { setPreset("top"); setNonce((n) => n + 1); }}><Grid3X3 size={15} /> علوي</button>
-            <button className={preset === "front" ? "active" : ""} onClick={() => { setPreset("front"); setNonce((n) => n + 1); }}><Box size={15} /> مقطع</button>
-            <button className={preset === "walk" ? "active" : ""} onClick={() => { setPreset("walk"); setNonce((n) => n + 1); }}><Home size={15} /> قريب</button>
-            <button onClick={() => setLabels((v) => !v)}>{labels ? <Eye size={15} /> : <EyeOff size={15} />} التسميات</button>
-            <button onClick={() => setNonce((n) => n + 1)}><Focus size={15} /> تركيز</button>
-            <button onClick={() => { setFloor("all"); setPreset("iso"); setNonce((n) => n + 1); }}><RotateCcw size={15} /> إعادة</button>
-          </div>
-        </div>
-
-        <div className="twin-studio-canvas">
-          <StudioCanvas system={system} floor={floor} labels={labels} preset={preset} nonce={nonce} />
-          <div className="twin-studio-hud primary"><span style={{ background: info.color }} /><div><small>{info.english}</small><strong>{info.label}</strong></div></div>
-          <div className="twin-studio-hud help"><span>اسحب للدوران</span><i /><span>قرّب بإصبعين</span><i /><span>اختر النظام لكشف مساره</span></div>
-        </div>
-      </div>
-
-      <aside className="twin-studio-inspector">
-        <div className="twin-studio-inspector-head">
-          <span className="twin-studio-system-icon" style={{ color: info.color, borderColor: info.color }}>{system === "architecture" ? <Building2 size={20} /> : system === "electricity" ? <Zap size={20} /> : system === "hvac" ? <Wind size={20} /> : <Droplets size={20} />}</span>
-          <div><small>{info.english}</small><h2>{info.label}</h2></div>
-          <CheckCircle2 size={17} className="twin-studio-ok" />
-        </div>
-        <p className="twin-studio-description">{info.description}</p>
-
-        <section className="twin-studio-route">
-          <div className="studio-inspector-title"><Layers3 size={15} /><h3>المسار داخل المبنى</h3></div>
-          <div className="twin-studio-route-flow">
-            {info.path.map((step, index) => <div key={step}><span>{String(index + 1).padStart(2, "0")}</span><strong>{step}</strong>{index < info.path.length - 1 && <i />}</div>)}
-          </div>
-        </section>
-
-        <section className="twin-studio-components">
-          <div className="studio-inspector-title"><Grid3X3 size={15} /><h3>العناصر الظاهرة</h3></div>
-          <div className="twin-studio-component-list">
-            {info.components.map((component) => <article key={component.code}>
-              <span>{component.code}</span><div><strong>{component.name}</strong><small>{component.detail}</small></div>
-            </article>)}
-          </div>
-        </section>
-
-        <section className="twin-studio-reading">
-          <div><span>الدور المعروض</span><strong>{floorMeta.find((item) => item.key === floor)?.label}</strong></div>
-          <div><span>وضع الرؤية</span><strong>{system === "architecture" ? "واجهة كاملة" : "Cutaway · كشف الخدمات"}</strong></div>
-          <div><span>مصدر البيانات</span><strong>Generated demo</strong></div>
-        </section>
-      </aside>
-    </section>
-  </main>;
-}
-
+export function DigitalTwinStudioPage(){const[system,setSystem]=useState<Sys>("architecture"),[floor,setFloor]=useState<Floor>("all"),[room,setRoom]=useState<Room>("all"),[preset,setPreset]=useState<Preset>("iso"),[labels,setLabels]=useState(true),[cutaway,setCutaway]=useState(false),[exploded,setExploded]=useState(false),[focus,setFocus]=useState<V3|null>(null),[nonce,setNonce]=useState(0);const info=sysMeta[system],Icon=icons[system],bump=()=>setNonce(n=>n+1);const chooseSystem=(s:Sys)=>{setSystem(s);setFloor("all");setRoom("all");setFocus(null);setExploded(false);setCutaway(s!=="architecture");setPreset(s==="architecture"?"iso":"front");bump()};const chooseRoom=(r:Room)=>{setRoom(r);setFocus(null);if(r!=="all"&&floor==="all")setFloor("ground");if(r!=="all"){setCutaway(true);setPreset("iso")}bump()};return <main className="twin-studio-page twin-studio-pro" dir="rtl"><header className="twin-studio-topbar"><div className="twin-studio-brand"><Link href="/unit" className="twin-studio-back"><ArrowLeft size={17}/> العودة لمسكني</Link><div><small>DIGITAL TWIN · BIM-LIKE ENGINEERING VIEW</small><h1>التوأم الرقمي الهندسي</h1><p>معماري مفروش + كهرباء وتأريض وتكييف ومياه وصرف، مع عزل النظام والغرفة وتتبع المسار.</p></div></div><div className="twin-studio-warning"><Info size={16}/><span>تصور هندسي تجريبي مولّد — ليس مخطط تنفيذ أو اعتماد BIM/MEP فعلي.</span></div></header><nav className="twin-studio-system-nav pro">{(Object.keys(sysMeta) as Sys[]).map(k=>{const I=icons[k];return <button key={k} className={system===k?"active":""} onClick={()=>chooseSystem(k)} style={{"--system-color":sysMeta[k].color} as CSSProperties}><I size={18}/><span><small>{sysMeta[k].en}</small><strong>{sysMeta[k].label}</strong></span></button>})}</nav><section className="twin-studio-workspace"><div className="twin-studio-viewer"><div className="twin-studio-viewbar pro"><div className="twin-studio-floor-tabs">{floorMeta.map(x=><button key={x.key} className={floor===x.key?"active":""} onClick={()=>{setFloor(x.key);setFocus(null);if(x.key!=="all"&&x.key!=="roof")setCutaway(true);if(x.key==="roof")setRoom("all");bump()}}><b>{x.short}</b><span>{x.label}</span></button>)}</div><div className="twin-studio-camera-actions"><button className={preset==="iso"?"active":""} onClick={()=>{setPreset("iso");setFocus(null);bump()}}><Maximize2 size={15}/> منظور</button><button className={preset==="top"?"active":""} onClick={()=>{setPreset("top");setFocus(null);bump()}}><Grid3X3 size={15}/> علوي</button><button className={preset==="front"?"active":""} onClick={()=>{setPreset("front");setCutaway(true);setFocus(null);bump()}}><Box size={15}/> مقطع</button><button className={preset==="walk"?"active":""} onClick={()=>{setPreset("walk");setFocus(null);bump()}}><Home size={15}/> قريب</button><button className={cutaway?"active":""} onClick={()=>{setCutaway(v=>!v);bump()}}><Layers3 size={15}/> كشف الواجهة</button><button disabled={system!=="architecture"} className={exploded?"active":""} onClick={()=>{setExploded(v=>!v);setCutaway(true);setRoom("all");bump()}}><Layers3 size={15}/> فصل الأدوار</button><button onClick={()=>setLabels(v=>!v)}>{labels?<Eye size={15}/>:<EyeOff size={15}/>} التسميات</button><button onClick={()=>{setFocus(null);bump()}}><Focus size={15}/> تركيز</button><button onClick={()=>{setSystem("architecture");setFloor("all");setRoom("all");setPreset("iso");setCutaway(false);setExploded(false);setFocus(null);setLabels(true);bump()}}><RotateCcw size={15}/> إعادة</button></div></div><div className="twin-studio-room-strip"><div><Focus size={14}/><span>تتبّع داخل غرفة</span></div><div className="twin-studio-room-tabs">{(Object.keys(rooms) as Room[]).map(k=><button key={k} disabled={floor==="roof"&&k!=="all"} className={room===k?"active":""} onClick={()=>chooseRoom(k)}><b>{rooms[k].short}</b><span>{rooms[k].label}</span></button>)}</div></div><div className="twin-studio-canvas"><Viewer system={system} floor={floor} room={room} labels={labels} preset={preset} nonce={nonce} cutaway={cutaway} exploded={exploded} focus={focus} onRoom={chooseRoom}/><div className="twin-studio-hud primary"><span style={{background:info.color}}/><div><small>{info.en}</small><strong>{info.label}</strong></div></div><div className="twin-studio-hud pro-focus"><Layers3 size={14}/><span>{fl(floor)}</span><i/><strong>{rl(room)}</strong></div><div className="twin-studio-hud help"><span>اسحب للدوران</span><i/><span>قرّب بإصبعين</span><i/><span>اضغط على غرفة أو عنصر</span></div></div></div><aside className="twin-studio-inspector"><div className="twin-studio-inspector-head"><span className="twin-studio-system-icon" style={{color:info.color,borderColor:info.color}}><Icon size={20}/></span><div><small>{info.en}</small><h2>{info.label}</h2></div><CheckCircle2 size={17} className="twin-studio-ok"/></div><p className="twin-studio-description">{info.desc}</p><section className="twin-studio-focus-card"><div><span>التركيز الحالي</span><strong>{fl(floor)} · {rl(room)}</strong></div><p>{note(system,room)}</p>{room!=="all"&&<button onClick={()=>{setFocus(null);setPreset("iso");bump()}}><Focus size={14}/> ركّز على الغرفة</button>}</section><section className="twin-studio-route"><div className="studio-inspector-title"><Layers3 size={15}/><h3>المسار داخل المبنى</h3></div><div className="twin-studio-route-flow">{info.path.map((x,i)=><div key={x}><span>{String(i+1).padStart(2,"0")}</span><strong>{x}</strong>{i<info.path.length-1&&<i/>}</div>)}</div></section><section className="twin-studio-components"><div className="studio-inspector-title"><Grid3X3 size={15}/><h3>العناصر — اضغط للانتقال</h3></div><div className="twin-studio-component-list pro">{info.items.map(x=><button key={x.code} onClick={()=>{setFocus(x.focus);bump()}}><span>{x.code}</span><div><strong>{x.name}</strong><small>{x.detail}</small></div><Focus size={13}/></button>)}</div></section><section className="twin-studio-reading"><div><span>الدور</span><strong>{fl(floor)}</strong></div><div><span>الغرفة</span><strong>{rl(room)}</strong></div><div><span>وضع الرؤية</span><strong>{cutaway||system!=="architecture"?"Cutaway · كشف الداخل":"واجهة كاملة"}</strong></div><div><span>مصدر البيانات</span><strong>Generated demo</strong></div></section></aside></section></main>}
 export default DigitalTwinStudioPage;
