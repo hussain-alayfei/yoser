@@ -23,8 +23,10 @@ import { unitComponents } from "@/data";
 import { constructionFloors } from "@/constructionData";
 import type { RoomId, SystemKey } from "./ResidentialDigitalTwin";
 import { StatusBadge } from "./StatusBadge";
+import "../engineering-twin-embed.css";
 
 const ResidentialDigitalTwin = lazy(() => import("./ResidentialDigitalTwin").then((module) => ({ default: module.ResidentialDigitalTwin })));
+const EngineeringTwinStudioV6 = lazy(() => import("./EngineeringTwinStudioV6").then((module) => ({ default: module.EngineeringTwinStudioV6 })));
 
 const systemIcons = {
   electricity: PlugZap,
@@ -48,8 +50,7 @@ function TwinLoading() {
 }
 
 export function ConstructionTwin() {
-  const [selectedKey, setSelectedKey] = useState("second");
-  const selected = constructionFloors.find((floor) => floor.key === selectedKey) ?? constructionFloors[1];
+  const selected = constructionFloors.find((floor) => floor.key === "second") ?? constructionFloors[1];
 
   return (
     <section className="construction-twin twin-workspace" aria-label="التوأم الرقمي لمتابعة البناء">
@@ -57,7 +58,7 @@ export function ConstructionTwin() {
         <div>
           <p className="eyebrow">متابعة البناء · Digital Twin</p>
           <h2>المسكن كما يُبنى، دورًا بدور</h2>
-          <p>دوّر المجسم، قرّب، اختر أي دور، أو افصل الطبقات لرؤية حالة الهيكل وما يتم تنفيذه حاليًا.</p>
+          <p>نفس التوأم الهندسي في المعاينة والعرض الكامل. دوّر المبنى، غيّر الدور، افتح الأنظمة، واختر الغرف من نفس المشهد بدون اختلاف بين الصفحتين.</p>
         </div>
         <div className="twin-overall-progress" aria-label="نسبة الإنجاز الإجمالي 67 بالمئة">
           <span>الإنجاز الإجمالي</span>
@@ -68,20 +69,20 @@ export function ConstructionTwin() {
       </header>
 
       <div className="twin-studio-entry-row">
-        <p className="twin-disclaimer"><Info size={15} /><span>المجسم تفاعلي ويعرض بيانات النموذج التجريبي. النسب والتواريخ ليست تقريرًا هندسيًا معتمدًا.</span></p>
+        <p className="twin-disclaimer"><Info size={15} /><span>المعاينة والعرض الكامل يستخدمان الآن نفس نموذج 3D ونفس الأدوات. النسب والتواريخ بيانات تجريبية وليست تقريرًا هندسيًا معتمدًا.</span></p>
         <Link className="twin-open-studio" href="/unit/twin"><Maximize2 size={15} /> فتح العرض الهندسي الكامل</Link>
       </div>
 
-      <div className="twin-workspace-grid">
-        <section className="twin-viewport-panel" aria-label="منطقة عرض المجسم">
+      <div className="twin-workspace-grid twin-workspace-grid-unified">
+        <section className="twin-engineering-preview" aria-label="معاينة التوأم الهندسي الموحد">
           <Suspense fallback={<TwinLoading />}>
-            <ResidentialDigitalTwin mode="construction" selectedFloorKey={selectedKey} onSelectFloor={setSelectedKey} />
+            <EngineeringTwinStudioV6 />
           </Suspense>
         </section>
 
-        <aside className="twin-inspector floor-detail" aria-live="polite">
+        <aside className="twin-inspector floor-detail twin-build-summary" aria-label="ملخص مرحلة البناء الحالية">
           <div className="floor-detail-title">
-            <div><p className="eyebrow">الدور المحدد</p><h3>{selected.name}</h3></div>
+            <div><p className="eyebrow">المرحلة الحالية</p><h3>{selected.name}</h3></div>
             <StatusBadge tone={selected.tone as "success" | "info" | "muted"}>{selected.status}</StatusBadge>
           </div>
 
