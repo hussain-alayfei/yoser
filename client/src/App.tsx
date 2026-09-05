@@ -71,7 +71,8 @@ function GuardedNewMaintenancePage() {
 
 function Router() {
   return <Switch>
-    <Route path="/" component={OnboardingPage} />
+    {/* مؤقتًا: الرابط الرئيسي يفتح التوأم الرقمي الكامل مباشرة بدون أي بيانات مسبقة. */}
+    <Route path="/" component={DigitalTwinStudioRoute} />
     <Route path="/onboarding" component={OnboardingPage} />
     <Route path="/login" component={LoginPage} />
     <Route path="/home" component={HomePage} />
