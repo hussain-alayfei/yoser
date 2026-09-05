@@ -3,7 +3,7 @@
  * Stable navigation is separated from the sequential service flow: transaction
  * pages enter a focused mode, while dashboard/support pages keep normal nav.
  */
-import { ArrowRight, Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
+import { Armchair, ArrowRight, Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { getApplicationCreated, getJourneyStep } from "@/journeyExperience";
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/application", label: "رحلتي", icon: Compass },
   { href: "/requirements", label: "المتطلبات", icon: ClipboardList },
   { href: "/unit", label: "المسكن", icon: Building2 },
+  { href: "/unit/furnishing", label: "التأثيث", icon: Armchair },
   { href: "/notifications", label: "التحديثات", icon: Bell },
 ];
 
@@ -56,9 +57,11 @@ function NavLink({ href, label, icon: Icon, mobile = false }: { href: string; la
     ? location === "/home" || location === "/"
     : href === "/application"
       ? location === "/start" || location === "/programs" || location === "/application"
-      : href === "/association"
-        ? location === "/association"
-        : location === href || location.startsWith(`${href}/`);
+      : href === "/unit"
+        ? location === "/unit" || location.startsWith("/unit/twin") || location.startsWith("/unit/maintenance")
+        : href === "/association"
+          ? location === "/association"
+          : location === href || location.startsWith(`${href}/`);
 
   return (
     <Link href={href} className={`nav-item ${active ? "active" : ""} ${mobile ? "mobile-nav-item" : ""}`} aria-current={active ? "page" : undefined}>
