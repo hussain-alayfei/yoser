@@ -1,16 +1,16 @@
-import { ArrowLeft, Check, ChevronLeft, Circle, Compass } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Link } from "wouter";
 
 /**
- * Five user-facing milestones. Operational sub-stages stay inside the status
- * pages; this bar exists only to answer: where am I in the overall journey?
+ * The beneficiary journey is intentionally limited to five memorable stages.
+ * Operational details belong inside the relevant page, not inside this tracker.
  */
 const majorStages = [
-  { key: "profile", label: "بياناتك", description: "فهم احتياجك السكني", href: "/start" },
-  { key: "programs", label: "البرامج", description: "مراجعة الخيارات المناسبة", href: "/programs", assisted: true },
-  { key: "application", label: "الطلب", description: "التقديم والمتابعة", href: "/application" },
-  { key: "unit", label: "المسكن", description: "البناء ثم الاستلام", href: "/unit" },
-  { key: "care", label: "العناية", description: "الصيانة بعد الاستلام", href: "/unit/maintenance" },
+  { key: "profile", label: "بياناتك", href: "/start" },
+  { key: "programs", label: "البرنامج", href: "/programs" },
+  { key: "application", label: "الطلب", href: "/application" },
+  { key: "unit", label: "المسكن", href: "/unit" },
+  { key: "care", label: "العناية", href: "/unit/maintenance" },
 ] as const;
 
 function toMajorStep(currentStep: number) {
@@ -26,15 +26,13 @@ export function JourneyNavigator({ currentStep }: { currentStep: number }) {
   const current = majorStages[safeStep];
 
   return (
-    <section className="journey-navigator" aria-label="مسار رحلتك السكنية">
+    <section className="journey-navigator" aria-label="رحلتك السكنية">
       <div className="journey-navigator-head">
         <div className="journey-current-copy">
-          <span className="journey-step-count">الخطوة {safeStep + 1} من {majorStages.length}</span>
-          <div>
-            <strong>{current.label}</strong>
-            <small>{current.description}</small>
-          </div>
+          <span className="journey-kicker">رحلتك السكنية</span>
+          <strong>{current.label}</strong>
         </div>
+        <span className="journey-step-count">{safeStep + 1} من {majorStages.length}</span>
       </div>
 
       <ol className="journey-stage-list">
@@ -42,27 +40,18 @@ export function JourneyNavigator({ currentStep }: { currentStep: number }) {
           const state = index < safeStep ? "done" : index === safeStep ? "current" : "next";
           const content = (
             <>
-              <span className="journey-stage-node">
-                {state === "done" ? <Check size={13} /> : state === "current" ? <Circle size={9} fill="currentColor" /> : index + 1}
+              <span className="journey-stage-node" aria-hidden="true">
+                {state === "done" ? <Check size={13} /> : index + 1}
               </span>
-              <span className="journey-stage-copy">
-                <strong>
-                  {stage.label}
-                  {"assisted" in stage && stage.assisted && (
-                    <span className="journey-ai-mark" title="يظهر مساعد يسر هنا لترتيب وشرح الخيارات" aria-label="يتضمن مساعدة من مساعد يسر">
-                      <Compass size={9} />
-                    </span>
-                  )}
-                </strong>
-                <small>{state === "done" ? "مكتمل" : state === "current" ? "أنت هنا" : "لاحقًا"}</small>
-              </span>
+              <span className="journey-stage-copy"><strong>{stage.label}</strong></span>
+              <span className="sr-only">{state === "done" ? "مكتمل" : state === "current" ? "المرحلة الحالية" : "مرحلة لاحقة"}</span>
             </>
           );
 
           return (
             <li key={stage.key} className={state} aria-current={state === "current" ? "step" : undefined}>
               {index <= safeStep ? <Link href={stage.href}>{content}</Link> : <span>{content}</span>}
-              {index < majorStages.length - 1 && <i className="journey-stage-connector" />}
+              {index < majorStages.length - 1 && <i className="journey-stage-connector" aria-hidden="true" />}
             </li>
           );
         })}
@@ -78,16 +67,16 @@ export function JourneyContinuation({ currentStep }: { currentStep: number }) {
   if (!previous && !next) return null;
 
   return (
-    <nav className="journey-continuation" aria-label="الانتقال بين مراحل الرحلة">
+    <nav className="journey-continuation" aria-label="السابق والتالي في الرحلة">
       {previous ? (
         <Link className="journey-back-link" href={previous.href}>
-          <ChevronLeft size={16} />
-          <span><small>السابق</small><strong>{previous.label}</strong></span>
+          <ArrowRight size={17} />
+          <span>السابق: {previous.label}</span>
         </Link>
       ) : <span />}
       {next && (
         <Link className="journey-next-link" href={next.href}>
-          <span><small>التالي</small><strong>{next.label}</strong></span>
+          <span>التالي: {next.label}</span>
           <ArrowLeft size={18} />
         </Link>
       )}
