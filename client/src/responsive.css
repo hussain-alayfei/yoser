@@ -1,83 +1,310 @@
 /**
- * Responsive hardening layer.
- *
- * This file is intentionally imported after product-polish.css. Earlier
- * prototype styles contain their own media queries, but some later desktop
- * overrides were winning the cascade on small screens. Keep responsive rules
- * here so mobile/tablet behavior has one final source of truth while desktop
- * presentation remains unchanged.
+ * Final layout contract.
+ * Imported after all beneficiary/product styles so every page follows one
+ * strict content grid on desktop, tablet and mobile. This is intentionally
+ * structural: widths, gaps, wrapping and overflow only.
  */
 
-/* Safe sizing on every viewport. */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+:root {
+  --content-max: 1240px;
+  --content-gutter: clamp(20px, 3vw, 44px);
+  --section-gap: 16px;
 }
 
-html,
-body,
-#root {
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { width: 100%; max-width: 100%; overflow-x: hidden; }
+img, video, canvas { max-width: 100%; }
+button, input, select, textarea { min-width: 0; max-width: 100%; }
+
+.app-shell, .main-content, .page-intro, .page-body, .page-body > *,
+.journey-navigator, .journey-continuation, .guided-back-row,
+.home-layout > *, .profile-layout > *, .staff-layout > *,
+.new-ticket-layout > *, .ticket-detail-grid > *, .twin-workspace-grid > *,
+.construction-lower-grid > *, .association-case-grid > *, .insight-grid > * {
+  min-width: 0;
+}
+
+.main-content {
   width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
-.app-shell,
-.main-content,
+/* One content lane. No page is allowed to invent its own narrow desktop frame. */
 .page-intro,
 .page-body,
-.page-body > * {
+.journey-navigator,
+.journey-continuation,
+.guided-back-row,
+.journey-context {
+  width: min(var(--content-max), calc(100% - (var(--content-gutter) * 2)));
+  max-width: var(--content-max);
+  margin-inline: auto;
+}
+
+.page-intro {
+  padding-inline: 0;
+  align-items: flex-start;
+}
+.page-intro > div:first-child { min-width: 0; }
+.page-subtitle { max-width: 760px; }
+
+.page-body {
+  padding-inline: 0;
+  padding-bottom: 4px;
+}
+
+.journey-navigator {
+  margin-top: 0;
+  margin-bottom: var(--section-gap);
+}
+.guided-back-row { margin-block: 12px 0; }
+.journey-context { margin-block: 0 var(--section-gap); }
+
+/* Direct page sections share predictable vertical rhythm. */
+.route-home .page-body,
+.route-application .page-body,
+.route-requirements .page-body,
+.route-programs .page-body,
+.route-unit .page-body,
+.route-unit-furnishing .page-body,
+.route-unit-maintenance .page-body,
+.route-notifications .page-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--section-gap);
+  align-content: start;
+}
+.route-home .page-body > *,
+.route-application .page-body > *,
+.route-requirements .page-body > *,
+.route-programs .page-body > *,
+.route-unit .page-body > *,
+.route-unit-furnishing .page-body > *,
+.route-unit-maintenance .page-body > *,
+.route-notifications .page-body > * {
+  margin-block: 0 !important;
+}
+
+/* Prevent old flex rules from allowing hero/action cards to collide. */
+.home-hero,
+.unified-next-action,
+.application-summary,
+.application-review-card,
+.requirement-primary-action,
+.beneficiary-association-card,
+.clarity-card,
+.journey-panel,
+.requirements-card,
+.notifications-card,
+.side-card {
+  position: relative;
   min-width: 0;
   max-width: 100%;
 }
 
-img,
-video,
-canvas {
-  max-width: 100%;
+.connected-home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(20px, 4vw, 54px);
 }
+.connected-home-hero .home-hero-copy { min-width: 0; }
+.hero-progress { width: min(100%, 620px); max-width: 620px; }
+.hero-waypoint { flex: none; margin: 0; }
 
-input,
-select,
-textarea,
-button {
+.unified-next-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+.unified-next-copy { min-width: 0; }
+.unified-next-copy p,
+.unified-next-copy h2 { overflow-wrap: anywhere; }
+.unified-next-action > .primary-btn,
+.unified-next-action > .secondary-btn { white-space: nowrap; }
+
+.home-layout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, .72fr);
+  gap: var(--section-gap);
+  align-items: start;
+}
+.home-main, .home-side { min-width: 0; }
+.home-side { display: grid; gap: var(--section-gap); }
+
+/* Application summary: stage number, copy and status get explicit cells. */
+.connected-application-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+.connected-application-summary > div:nth-child(2) { min-width: 0; }
+.application-stage-facts { display: flex; flex-wrap: wrap; gap: 7px; }
+.summary-delay { max-width: 760px; overflow-wrap: anywhere; }
+
+/* ------------------------------------------------------------------ */
+/* Strict journey timeline: milestones stay compact; current detail is */
+/* a separate panel, so text can never stretch one column downward.   */
+/* ------------------------------------------------------------------ */
+.strict-journey-panel { overflow: hidden; }
+.journey-panel-heading { align-items: center; margin-bottom: 18px; }
+
+.strict-journey-panel .journey-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  overflow: visible;
+  align-items: start;
+  padding: 0 2px;
+}
+.strict-journey-panel .journey-step {
   min-width: 0;
-  max-width: 100%;
+  position: relative;
+  padding-inline: 4px;
 }
-
-/* Grid/flex children are allowed to shrink instead of forcing page overflow. */
-.journey-start-layout > *,
-.home-layout > *,
-.profile-layout > *,
-.staff-layout > *,
-.new-ticket-layout > *,
-.ticket-detail-grid > *,
-.twin-workspace-grid > *,
-.construction-lower-grid > *,
-.association-case-grid > *,
-.insight-grid > * {
+.strict-journey-panel .journey-step-head {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.strict-journey-panel .step-marker {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  position: relative;
+  z-index: 2;
+}
+.strict-journey-panel .step-line {
+  height: 1px;
+  flex: 1;
+  min-width: 8px;
+  margin-inline: 5px -5px;
+  background: var(--line);
+}
+.strict-journey-panel .journey-step.done .step-line { background: #9bc0b7; }
+.strict-journey-panel .step-copy {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 5px;
   min-width: 0;
+  padding-top: 5px;
 }
+.strict-journey-panel .step-number {
+  font-size: 8px;
+  color: var(--ink-3);
+  line-height: 1;
+}
+.strict-journey-panel .step-copy h3 {
+  margin: 0;
+  min-height: 31px;
+  max-width: 130px;
+  font-size: 10px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.strict-journey-panel .step-copy .status-badge { font-size: 8px; padding: 4px 6px; }
+.strict-journey-panel .step-date { font-size: 8px; line-height: 1.5; color: var(--ink-3); }
 
-/* A higher-specificity legacy rule kept white copy from the old dark result
-   panel after that panel was redesigned as a light surface. Fix it globally. */
+.journey-current-detail {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid var(--brand);
+  border-radius: var(--radius-surface, 8px);
+  background: var(--surface-soft, #f6f8f7);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 22px;
+}
+.journey-current-detail-head {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+.journey-current-number {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+.journey-current-detail-head > div:nth-child(2) { min-width: 0; }
+.journey-current-detail-head h3 { margin: 2px 0 5px; font-size: 17px; }
+.journey-current-detail-head p:not(.eyebrow) { margin: 0; max-width: 720px; line-height: 1.75; }
+.journey-current-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.journey-current-meta > span {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 7px;
+  align-items: center;
+}
+.journey-current-meta svg { grid-row: 1 / 3; color: var(--brand); }
+.journey-current-meta small { color: var(--ink-3); font-size: 8px; }
+.journey-current-meta strong { font-size: 10px; overflow-wrap: anywhere; }
+.journey-current-explanation { min-width: min(420px, 34vw); max-width: 480px; }
+.journey-current-explanation .stage-why,
+.journey-current-explanation .stage-delay {
+  margin: 0;
+  width: 100%;
+}
+.journey-current-explanation .stage-delay { margin-top: 8px; }
+
+/* Previous/next are a compact local control, not two buttons stranded at edges. */
+.journey-continuation {
+  width: min(760px, calc(100% - (var(--content-gutter) * 2)));
+  max-width: 760px;
+  margin: 24px auto 42px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.journey-continuation > a {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0 !important;
+  justify-content: center;
+  text-align: center;
+}
+.journey-next-link { margin-right: 0 !important; }
+
+/* Forms and content surfaces shrink instead of overflowing. */
+.journey-start-layout > *, .profile-layout > *, .staff-layout > *,
+.new-ticket-layout > *, .ticket-detail-grid > *, .twin-workspace-grid > *,
+.construction-lower-grid > *, .association-case-grid > *, .insight-grid > * { min-width: 0; }
+
 .journey-start-result .prototype-note {
-  background: #ffffff;
+  background: #fff;
   border: 1px solid var(--line);
   color: var(--ink-2);
 }
+.journey-start-result .prototype-note svg { color: var(--brand); }
+.journey-start-result .prototype-note, .journey-start-result .prototype-note * { overflow-wrap: anywhere; }
 
-.journey-start-result .prototype-note svg {
-  color: var(--brand);
-}
-
-.journey-start-result .prototype-note,
-.journey-start-result .prototype-note * {
-  overflow-wrap: anywhere;
-}
-
-/* Scrollable data regions must scroll themselves, never the whole page. */
 .cases-table-wrap,
 .maintenance-flow,
 .ticket-steps,
@@ -87,560 +314,216 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
-@media (max-width: 1050px) {
-  /* The content column is narrower here because the desktop sidebar is still
-     visible. Collapse expensive two-column workspaces before they feel cramped. */
-  .twin-workspace-grid,
-  .construction-grid,
-  .construction-lower-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* Upload flow introduced in Requirements V2. */
+.upload-file-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+.upload-file-summary > div { min-width: 0; }
+.upload-file-summary strong, .upload-file-summary small { display: block; overflow-wrap: anywhere; }
+.upload-file-summary small { margin-top: 3px; color: var(--ink-3); font-size: 9px; }
+.upload-file-remove { border: 0; background: transparent; color: var(--danger-ink); font: inherit; font-size: 10px; font-weight: 700; }
+.upload-modal-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-top: 12px; }
+.upload-modal-actions .primary-btn { width: 100%; }
+.upload-validation-note { margin: 10px 0 0; font-size: 9px; color: var(--ink-3); line-height: 1.7; }
 
-  .twin-inspector {
-    order: 2;
-  }
+@media (max-width: 1120px) {
+  :root { --content-gutter: 28px; }
+  .home-layout { grid-template-columns: minmax(0, 1fr); }
+  .home-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .twin-workspace-grid, .construction-grid, .construction-lower-grid { grid-template-columns: minmax(0, 1fr); }
+  .twin-inspector { order: 2; }
 }
 
 @media (max-width: 900px) {
-  /* Critical regression fix: product-polish.css reintroduced a desktop
-     minmax(300px, ...) second column after upgrade.css had already stacked it. */
+  :root { --content-gutter: 20px; --section-gap: 14px; }
+
   .journey-start-layout {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) !important;
     align-items: start;
     gap: 14px;
   }
+  .journey-start-form { order: 1; }
+  .journey-start-result { order: 2; min-height: 0; width: 100%; }
 
-  .journey-start-form {
-    order: 1;
-  }
+  .home-layout, .profile-layout, .staff-layout, .new-ticket-layout,
+  .ticket-detail-grid, .association-case-grid { grid-template-columns: minmax(0, 1fr); }
+  .home-side { grid-template-columns: minmax(0, 1fr); }
 
-  .journey-start-result {
-    order: 2;
-    min-height: 0;
-    width: 100%;
-  }
-
-  .home-layout,
-  .profile-layout,
-  .staff-layout,
-  .new-ticket-layout,
-  .ticket-detail-grid,
-  .association-case-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .home-side,
-  .profile-side,
-  .staff-side {
-    min-width: 0;
-  }
+  .connected-home-hero { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .hero-waypoint { justify-self: start; }
 
   .unified-next-action {
-    flex-wrap: wrap;
-  }
-
-  .unified-next-copy {
-    min-width: 0;
-  }
-
-  .twin-workspace-header {
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
   }
+  .unified-next-action > .primary-btn,
+  .unified-next-action > .secondary-btn { grid-column: 1 / -1; width: 100%; justify-content: center; }
 
-  .twin-overall-progress {
-    width: min(100%, 320px);
+  .connected-application-summary { grid-template-columns: auto minmax(0, 1fr); }
+  .connected-application-summary > .status-badge { grid-column: 2; justify-self: start; }
+
+  .strict-journey-panel { overflow: visible; }
+  .strict-journey-panel .journey-track {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 0;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
   }
+  .strict-journey-panel .journey-track::-webkit-scrollbar { display: none; }
+  .strict-journey-panel .journey-step { flex: 0 0 132px; scroll-snap-align: start; }
+  .strict-journey-panel .step-copy h3 { max-width: 116px; }
+
+  .journey-current-detail { grid-template-columns: minmax(0, 1fr); }
+  .journey-current-meta { grid-column: 1; }
+  .journey-current-explanation { min-width: 0; max-width: 100%; }
 }
 
 @media (max-width: 760px) {
-  /* Shell and page spacing. */
+  :root { --content-gutter: 14px; --section-gap: 12px; }
+
   .main-content {
     width: 100%;
     overflow: visible;
     padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 
-  .page-intro {
-    padding: 20px 16px 13px;
-    align-items: flex-start;
+  .page-intro,
+  .page-body,
+  .journey-navigator,
+  .guided-back-row,
+  .journey-context {
+    width: calc(100% - 28px);
+    max-width: none;
   }
 
-  .page-intro h1 {
-    font-size: clamp(23px, 7vw, 27px);
-    line-height: 1.35;
-  }
+  .page-intro { padding: 20px 0 13px; }
+  .page-intro h1 { font-size: clamp(23px, 7vw, 27px); line-height: 1.35; }
+  .page-subtitle { max-width: 100%; font-size: 12px; line-height: 1.75; }
+  .page-actions { width: 100%; }
+  .page-actions > a, .page-actions > button { width: 100%; justify-content: center; }
 
-  .page-subtitle {
-    max-width: 100%;
-    font-size: 12px;
-    line-height: 1.75;
-  }
-
-  .page-actions {
-    width: 100%;
-  }
-
-  .page-actions > a,
-  .page-actions > button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .page-body {
-    width: 100%;
-    padding-inline: 16px;
-  }
-
-  /* Mobile navigation: drawer is off-canvas and bottom navigation owns the
-     persistent destinations. The association space has four destinations. */
-  .sidebar {
-    width: min(278px, calc(100vw - 32px));
-    max-width: calc(100vw - 32px);
-  }
-
+  .sidebar { width: min(278px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
   .mobile-bottom-nav {
-    height: auto;
     min-height: 66px;
+    height: auto;
     padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+  .association-shell .mobile-bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mobile-nav-item { min-height: 56px; min-width: 0; padding-inline: 2px; white-space: normal; text-align: center; line-height: 1.25; }
 
-  .association-shell .mobile-bottom-nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .mobile-nav-item {
-    min-width: 0;
-    min-height: 56px;
-    padding-inline: 2px;
-    white-space: normal;
-    text-align: center;
-    line-height: 1.25;
-  }
-
-  /* Journey map: use a horizontal stage strip rather than squeezing five
-     desktop columns into the phone width. */
-  .journey-navigator {
-    width: auto;
-    margin-inline: 16px;
-    padding: 12px;
-    overflow: hidden;
-  }
-
-  .journey-navigator-head {
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .journey-progress-compact {
-    min-width: 96px;
-  }
-
+  .journey-navigator { padding: 12px; overflow: hidden; }
+  .journey-navigator-head { align-items: flex-start; gap: 10px; }
   .journey-stage-list {
-    display: flex;
-    grid-template-columns: none;
+    display: flex !important;
+    grid-template-columns: none !important;
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     padding: 12px 0 5px;
-    scroll-snap-type: x proximity;
     scrollbar-width: none;
+    scroll-snap-type: x proximity;
   }
+  .journey-stage-list::-webkit-scrollbar { display: none; }
+  .journey-stage-list li { flex: 0 0 104px; min-width: 104px; scroll-snap-align: start; }
+  .journey-stage-copy strong { white-space: normal; line-height: 1.45; }
 
-  .journey-stage-list::-webkit-scrollbar {
-    display: none;
-  }
+  .journey-start-layout { display: grid; grid-template-columns: minmax(0, 1fr) !important; gap: 12px; }
+  .journey-start-form, .journey-start-result { width: 100%; max-width: 100%; padding: 18px; }
+  .journey-start-form .section-heading { align-items: flex-start; flex-wrap: wrap; gap: 9px; }
+  .completion-pill { flex: none; }
+  .onboarding-fields { grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 18px 0; }
+  .onboarding-fields label, .onboarding-fields select, .onboarding-fields input { width: 100%; min-width: 0; }
+  .onboarding-fields select, .onboarding-fields input { min-height: 48px; }
+  .journey-start-form .primary-btn { width: 100%; justify-content: center; }
+  .journey-start-result h2 { max-width: 100%; font-size: 22px; line-height: 1.45; }
 
-  .journey-stage-list li {
-    flex: 0 0 104px;
-    min-width: 104px;
-    scroll-snap-align: start;
-  }
+  .application-review-card, .create-application-card { align-items: stretch; }
+  .application-review-card .primary-btn, .create-application-card .primary-btn { width: 100%; justify-content: center; }
 
-  .journey-stage-copy strong {
-    white-space: normal;
-    line-height: 1.45;
-  }
+  .connected-application-summary { grid-template-columns: minmax(0, 1fr); padding: 15px; }
+  .connected-application-summary .application-stage-number { justify-self: start; }
+  .connected-application-summary > .status-badge { grid-column: 1; }
 
-  /* Start/profile form: one readable task at a time. */
-  .journey-start-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
+  .journey-current-detail { padding: 13px; gap: 12px; }
+  .journey-current-detail-head { grid-template-columns: auto minmax(0, 1fr); }
+  .journey-current-detail-head > .status-badge { grid-column: 2; justify-self: start; }
+  .journey-current-meta { grid-template-columns: minmax(0, 1fr); }
 
-  .journey-start-form,
-  .journey-start-result {
-    width: 100%;
-    max-width: 100%;
-    padding: 18px;
-  }
-
-  .journey-start-form .section-heading {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 9px;
-  }
-
-  .journey-start-form .section-heading > div {
-    min-width: 0;
-    flex: 1 1 210px;
-  }
-
-  .completion-pill {
-    flex: none;
-  }
-
-  .onboarding-fields {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-    margin: 18px 0;
-  }
-
-  .onboarding-fields label,
-  .onboarding-fields select,
-  .onboarding-fields input {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .onboarding-fields select,
-  .onboarding-fields input {
-    min-height: 48px;
-  }
-
-  .journey-start-form .primary-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .journey-start-result h2 {
-    max-width: 100%;
-    font-size: 22px;
-    line-height: 1.45;
-  }
-
-  .result-orbit {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 14px;
-  }
-
-  .result-route {
-    margin: 20px 0;
-    gap: 8px 10px;
-  }
-
-  .journey-start-result .prototype-note {
-    margin-top: 15px;
-    padding: 10px;
-    font-size: 10px;
-    line-height: 1.75;
-  }
-
-  /* Primary next step: copy first, full-width action second. */
-  .unified-next-action {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    gap: 12px;
-    padding: 15px;
-  }
-
-  .unified-next-action > .primary-btn,
-  .unified-next-action > .secondary-btn {
-    grid-column: 1 / -1;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .unified-next-copy h2 {
-    line-height: 1.45;
-  }
-
-  .ai-waiting-on {
-    max-width: 100%;
-    white-space: normal;
-  }
-
-  /* Common responsive content layouts. */
-  .home-side,
-  .profile-side,
-  .staff-side,
-  .insight-grid,
-  .association-two-col,
-  .construction-lower-grid {
+  .journey-continuation {
+    width: calc(100% - 28px);
+    max-width: none;
+    margin: 18px auto calc(86px + env(safe-area-inset-bottom));
     grid-template-columns: minmax(0, 1fr);
   }
+  .journey-continuation > a { min-height: 46px; }
 
-  .profile-fields,
-  .form-row,
-  .case-requirements,
-  .floor-dates {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  .association-filter-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .association-filter-bar label:first-child { grid-column: 1 / -1; }
+  .association-filter-bar label, .association-filter-bar .filter-reset { width: 100%; min-width: 0; margin: 0; }
 
-  .program-card,
-  .application-summary,
-  .application-review-card,
-  .create-application-card,
-  .next-action-card,
-  .association-case-header,
-  .association-next-card {
-    max-width: 100%;
-  }
+  .association-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .association-case-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; gap: 10px; }
+  .association-case-action { grid-column: 1 / -1; }
 
-  .application-review-card,
-  .create-application-card {
-    align-items: stretch;
-  }
+  .cases-table-wrap { width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+  .cases-table { width: max(100%, 640px); }
 
-  .application-review-card .primary-btn,
-  .create-application-card .primary-btn {
-    width: 100%;
-    justify-content: center;
+  .twin-workspace-header { display: grid; gap: 10px; }
+  .twin-overall-progress { width: 100%; }
+  .twin-render-surface, .twin-render-surface .building-model-stage {
+    width: 100%; min-height: clamp(300px, 82vw, 390px); height: clamp(300px, 82vw, 390px);
   }
+  .twin-viewport-toolbar, .twin-viewport-footer { flex-wrap: wrap; align-items: flex-start; }
+  .twin-viewport-footer { flex-direction: column; }
+  .building-legend { flex-wrap: wrap; gap: 8px 12px; }
 
-  /* Toolbars wrap into usable controls instead of shrinking labels. */
-  .notification-toolbar,
-  .case-toolbar,
-  .association-filter-bar {
-    max-width: 100%;
-  }
-
-  .association-filter-bar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .association-filter-bar label:first-child {
-    grid-column: 1 / -1;
-  }
-
-  .association-filter-bar label,
-  .association-filter-bar label:first-child,
-  .association-filter-bar .filter-reset {
-    width: 100%;
-    min-width: 0;
-    margin: 0;
-  }
-
-  .association-filter-bar select {
-    min-width: 0;
-  }
-
-  /* Operational cards: enough structure to scan, never horizontal clipping. */
-  .association-kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .association-kpi {
-    min-width: 0;
-    min-height: 106px;
-  }
-
-  .association-case-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    width: 100%;
-    gap: 10px;
-  }
-
-  .association-case-person,
-  .association-case-row > div {
-    min-width: 0;
-  }
-
-  .association-case-row strong,
-  .association-case-row span,
-  .association-case-row small {
-    overflow-wrap: anywhere;
-  }
-
-  .association-case-action {
-    grid-column: 1 / -1;
-  }
-
-  /* Data tables deliberately scroll inside their own frame. */
-  .cases-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-  }
-
-  .cases-table {
-    width: max(100%, 640px);
-  }
-
-  /* Digital twin remains useful on a phone without a fixed desktop canvas. */
-  .twin-workspace-header {
-    display: grid;
-    gap: 10px;
-  }
-
-  .twin-overall-progress {
-    width: 100%;
-  }
-
-  .twin-render-surface,
-  .twin-render-surface .building-model-stage {
-    width: 100%;
-    min-height: clamp(300px, 82vw, 390px);
-    height: clamp(300px, 82vw, 390px);
-  }
-
-  .twin-viewport-toolbar,
-  .twin-viewport-footer {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-
-  .twin-viewport-footer {
-    flex-direction: column;
-  }
-
-  .building-legend {
-    flex-wrap: wrap;
-    gap: 8px 12px;
-  }
+  .upload-modal { width: min(100% - 28px, 520px); max-height: calc(100dvh - 28px); overflow-y: auto; }
+  .upload-modal-actions { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 560px) {
-  .page-body {
-    padding-inline: 12px;
-  }
+  :root { --content-gutter: 12px; }
+  .page-intro, .page-body, .journey-navigator, .guided-back-row, .journey-context { width: calc(100% - 24px); }
+  .journey-start-form, .journey-start-result { padding: 16px; }
+  .journey-start-result h2 { font-size: 20px; }
+  .section-heading h2 { font-size: 18px; line-height: 1.45; }
+  .strict-journey-panel .journey-step { flex-basis: 118px; }
+  .journey-current-detail-head { grid-template-columns: minmax(0, 1fr); }
+  .journey-current-number { width: 36px; height: 36px; }
+  .journey-current-detail-head > .status-badge { grid-column: 1; }
+  .journey-continuation { width: calc(100% - 24px); }
 
-  .page-intro {
-    padding-inline: 12px;
-  }
+  .notification-toolbar { overflow-x: auto; scrollbar-width: none; }
+  .notification-toolbar::-webkit-scrollbar { display: none; }
+  .notification-toolbar button { flex: none; white-space: nowrap; }
 
-  .journey-navigator {
-    margin-inline: 12px;
-  }
-
-  .journey-navigator-head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .journey-navigator-head > div:first-child {
-    min-width: 0;
-  }
-
-  .journey-navigator-head small {
-    line-height: 1.55;
-  }
-
-  .journey-stage-list li {
-    flex-basis: 94px;
-    min-width: 94px;
-  }
-
-  .journey-start-form,
-  .journey-start-result {
-    padding: 16px;
-  }
-
-  .journey-start-result h2 {
-    font-size: 20px;
-  }
-
-  .section-heading h2 {
-    font-size: 18px;
-    line-height: 1.45;
-  }
-
-  .notification-toolbar {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .notification-toolbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .notification-toolbar button {
-    flex: none;
-    white-space: nowrap;
-  }
-
-  .association-filter-bar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .association-filter-bar label:first-child {
-    grid-column: auto;
-  }
-
-  .association-case-row {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 12px;
-  }
-
-  .association-case-row > div:nth-child(4),
-  .association-case-row .association-case-action {
-    grid-column: auto;
-  }
-
-  .association-case-action {
-    justify-content: flex-start;
-    border-top: 1px solid var(--line);
-    padding-top: 9px;
-  }
-
-  .association-kpi {
-    min-height: 96px;
-    padding: 11px;
-  }
-
-  .association-kpi strong {
-    font-size: 22px;
-  }
-
-  .maintenance-summary {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .component-pills {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .building-floor {
-    grid-template-columns: minmax(0, 1fr) 86px;
-  }
-
-  .floor-state {
-    grid-column: 1 / -1;
-  }
+  .association-filter-bar { grid-template-columns: minmax(0, 1fr); }
+  .association-filter-bar label:first-child { grid-column: auto; }
+  .association-case-row { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .association-case-action { grid-column: auto; justify-content: flex-start; border-top: 1px solid var(--line); padding-top: 9px; }
+  .association-kpi { min-height: 96px; padding: 11px; }
+  .maintenance-summary, .component-pills { grid-template-columns: minmax(0, 1fr); }
+  .upload-file-summary { grid-template-columns: auto minmax(0, 1fr); }
+  .upload-file-remove { grid-column: 2; justify-self: start; }
 }
 
 @media (max-width: 390px) {
-  .topbar {
-    padding-inline: 10px;
-    gap: 8px;
-  }
-
-  .page-intro,
-  .page-body {
-    padding-inline: 10px;
-  }
-
-  .journey-navigator {
-    margin-inline: 10px;
-  }
-
-  .journey-start-form,
-  .journey-start-result {
-    padding: 14px;
-  }
-
-  .completion-pill {
-    width: 100%;
-    text-align: center;
-  }
-
-  .association-kpi-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  .topbar { padding-inline: 10px; }
+  .page-intro, .page-body, .journey-navigator, .guided-back-row, .journey-context { width: calc(100% - 20px); }
+  .journey-start-form, .journey-start-result { padding: 14px; }
+  .completion-pill { width: 100%; text-align: center; }
+  .association-kpi-grid { grid-template-columns: minmax(0, 1fr); }
+  .journey-continuation { width: calc(100% - 20px); }
 }
