@@ -13,7 +13,7 @@ import { Link, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { AppShell } from "./components/AppShell";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { getApplicationCreated, getHandoverComplete, getUnitReady } from "./journeyExperience";
+import { getApplicationCreated, getHandoverComplete } from "./journeyExperience";
 import { LoginPage } from "./pages/Login";
 import { OnboardingPage } from "./pages/Onboarding";
 import { JourneyStartPage, HomePage, ProfilePage, ProgramsPage, ApplicationPage, NotificationsPage, UnitPage, MaintenancePage, MaintenanceDetailPage, NewMaintenancePage } from "./pages/BeneficiaryPages";
@@ -57,18 +57,6 @@ function GuardedRequirementsPage() {
   return <JourneyGate allowed={getApplicationCreated()} eyebrow="تسلسل الرحلة" title="قدّم طلبك أولًا" description="المتطلبات المرتبطة بالمراجعة لا تظهر قبل إكمال البيانات واختيار البرنامج وتقديم الطلب." href="/application" action="العودة إلى الطلب"><RequirementsPageV2 /></JourneyGate>;
 }
 
-function GuardedUnitPage() {
-  return <JourneyGate allowed={getUnitReady()} eyebrow="تسلسل الرحلة" title="الوحدة لم تُخصّص بعد" description="يفتح قسم المسكن والتوأم الرقمي عندما تؤكد الجهة تخصيص الوحدة وانتقال الطلب إلى مرحلة البناء." href="/application" action="متابعة حالة الطلب"><UnitPage /></JourneyGate>;
-}
-
-function GuardedDigitalTwinStudioRoute() {
-  return <JourneyGate allowed={getUnitReady()} eyebrow="تسلسل الرحلة" title="التوأم الرقمي غير متاح بعد" description="لا نعرض نموذج وحدة على أنه وحدتك قبل اكتمال التخصيص. سيظهر التوأم الرقمي تلقائيًا عند جاهزية المسكن للمتابعة." href="/application" action="متابعة حالة الطلب"><DigitalTwinStudioRoute /></JourneyGate>;
-}
-
-function GuardedFurnishingPage() {
-  return <JourneyGate allowed={getHandoverComplete()} eyebrow="تسلسل الرحلة" title="التأثيث يبدأ بعد الاستلام" description="لا يمكن الانتقال إلى التأثيث قبل اكتمال الاستلام وتأكيد جاهزية الوحدة." href="/application" action="متابعة الرحلة"><FurnishingPage /></JourneyGate>;
-}
-
 function GuardedMaintenancePage() {
   return <JourneyGate allowed={getHandoverComplete()} eyebrow="تسلسل الرحلة" title="العناية بالمسكن تبدأ بعد الاستلام" description="خدمات الصيانة والبلاغات تفتح بعد استلام الوحدة، حتى لا تظهر لك إجراءات غير قابلة للتنفيذ." href="/application" action="متابعة الرحلة"><MaintenancePage /></JourneyGate>;
 }
@@ -93,9 +81,9 @@ function Router() {
     <Route path="/application" component={ApplicationPage} />
     <Route path="/requirements" component={GuardedRequirementsPage} />
     <Route path="/notifications" component={NotificationsPage} />
-    <Route path="/unit" component={GuardedUnitPage} />
-    <Route path="/unit/twin" component={GuardedDigitalTwinStudioRoute} />
-    <Route path="/unit/furnishing" component={GuardedFurnishingPage} />
+    <Route path="/unit" component={UnitPage} />
+    <Route path="/unit/twin" component={DigitalTwinStudioRoute} />
+    <Route path="/unit/furnishing" component={FurnishingPage} />
     <Route path="/unit/maintenance" component={GuardedMaintenancePage} />
     <Route path="/unit/maintenance/new" component={GuardedNewMaintenancePage} />
     <Route path="/unit/maintenance/:id" component={GuardedMaintenanceDetailPage} />
