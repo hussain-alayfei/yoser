@@ -23,13 +23,17 @@
   isolation: isolate;
 }
 
+/* Keep the product identity at the natural RTL start (right side), not floating
+ * in the centre of the header. The spacer then keeps account actions on the left. */
 .topbar-brand {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
+  left: auto;
+  right: auto;
+  transform: none;
   z-index: 2;
   max-width: min(220px, 42vw);
   white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .topbar-brand strong {
