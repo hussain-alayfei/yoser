@@ -18,6 +18,7 @@ import "./responsive.css";
 import "./mobile-ios.css";
 // Final journey pass: clear process steps, one primary action, quiet AI markers.
 import "./journey-v2.css";
+import "./journey-cleanup.css";
 // Dedicated WebGL digital-twin workspace styles are tightly scoped and load last.
 import "./digital-twin-3d.css";
 import "./digital-twin-loading.css";
