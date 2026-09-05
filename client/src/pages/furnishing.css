@@ -1,0 +1,471 @@
+/* Post-handover furnishing page: flat, official and task-focused. */
+.route-unit-furnishing .page-body {
+  display: grid;
+  gap: 22px;
+}
+
+.furnishing-locked,
+.furnishing-status,
+.furnishing-hero,
+.furnishing-filter-section,
+.furnishing-card,
+.furnishing-note {
+  border: 1px solid var(--line);
+  border-radius: var(--r-3);
+  background: #fff;
+  box-shadow: none;
+}
+
+.furnishing-locked {
+  min-height: 220px;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.furnishing-locked-icon,
+.furnishing-status-mark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-2);
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+
+.furnishing-locked h2,
+.furnishing-filter-section h2,
+.furnishing-results-head h2,
+.furnishing-note strong,
+.furnishing-status strong {
+  color: var(--ink);
+}
+
+.furnishing-locked h2,
+.furnishing-filter-section h2,
+.furnishing-results-head h2 {
+  margin: 3px 0 6px;
+}
+
+.furnishing-locked p,
+.furnishing-status p,
+.furnishing-note p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  line-height: 1.8;
+}
+
+.furnishing-status {
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  border-inline-start: 3px solid var(--brand);
+}
+
+.furnishing-status-mark {
+  width: 38px;
+  height: 38px;
+}
+
+.furnishing-status strong {
+  display: block;
+  font-size: 14px;
+}
+
+.furnishing-status p {
+  font-size: 12px;
+}
+
+.furnishing-hero {
+  min-height: 178px;
+  padding: 26px 28px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.furnishing-hero-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: var(--r-3);
+  background: rgba(255, 255, 255, .08);
+}
+
+.furnishing-hero .eyebrow,
+.furnishing-hero h2,
+.furnishing-hero p {
+  color: #fff;
+}
+
+.furnishing-hero h2 {
+  margin: 5px 0 8px;
+  font-size: clamp(23px, 2.1vw, 32px);
+  line-height: 1.45;
+}
+
+.furnishing-hero-copy > p:last-of-type {
+  margin: 0;
+  max-width: 700px;
+  opacity: .82;
+  line-height: 1.9;
+}
+
+.furnishing-benefits {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+}
+
+.furnishing-benefits span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .9);
+}
+
+.furnishing-saving {
+  min-width: 170px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: var(--r-3);
+  background: rgba(255, 255, 255, .07);
+  text-align: right;
+}
+
+.furnishing-saving small,
+.furnishing-saving span {
+  display: block;
+  color: rgba(255, 255, 255, .7);
+  font-size: 11px;
+}
+
+.furnishing-saving strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 24px;
+  color: #fff;
+}
+
+.furnishing-filter-section {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: minmax(180px, .7fr) minmax(0, 1.7fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.furnishing-filter-section .eyebrow {
+  margin-bottom: 2px;
+}
+
+.furnishing-filters {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.furnishing-filters button,
+.furnishing-compare-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-soft);
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--r-2);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, color .16s ease;
+}
+
+.furnishing-filters button:hover,
+.furnishing-compare-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.furnishing-filters button.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.furnishing-results-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.furnishing-results-head span {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.furnishing-results-head h2 {
+  font-size: 21px;
+}
+
+.compare-count {
+  padding: 8px 10px;
+  background: var(--brand-tint);
+  border-radius: var(--r-2);
+  color: var(--brand) !important;
+  font-weight: 700;
+}
+
+.furnishing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.furnishing-card {
+  min-width: 0;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.furnishing-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.furnishing-card-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-3);
+  background: var(--brand-tint);
+  color: var(--brand);
+}
+
+.discount-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: var(--r-2);
+  background: #f5eadc;
+  color: #8d4e16;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.furnishing-card-copy small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.furnishing-card-copy h3 {
+  margin: 4px 0 6px;
+  color: var(--ink);
+  font-size: 19px;
+}
+
+.furnishing-card-copy p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.furnishing-items {
+  margin: 0;
+  padding: 14px 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.furnishing-items li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.furnishing-items svg {
+  flex: 0 0 auto;
+  color: #2a806f;
+}
+
+.furnishing-price-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: end;
+}
+
+.furnishing-price-row small {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.furnishing-price-row strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--brand);
+  font-size: 22px;
+}
+
+.furnishing-price-row strong span {
+  font-size: 12px;
+}
+
+.furnishing-price-row del {
+  color: #8a9894;
+  font-size: 12px;
+}
+
+.furnishing-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(130px, .8fr);
+  gap: 10px;
+}
+
+.furnishing-contact-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.furnishing-compare-btn.selected {
+  border-color: #9bbfb7;
+  background: var(--brand-tint);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.furnishing-note {
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  color: var(--brand);
+}
+
+.furnishing-note p {
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .furnishing-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .furnishing-saving {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .furnishing-filter-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .route-unit-furnishing .page-body {
+    gap: 16px;
+  }
+
+  .furnishing-locked {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .furnishing-status {
+    align-items: start;
+  }
+
+  .furnishing-hero {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .furnishing-hero-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .furnishing-saving {
+    grid-column: auto;
+  }
+
+  .furnishing-filter-section {
+    padding: 16px;
+  }
+
+  .furnishing-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .furnishing-filters button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .furnishing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .furnishing-card {
+    padding: 17px;
+  }
+
+  .furnishing-items {
+    grid-template-columns: 1fr;
+  }
+
+  .furnishing-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .furnishing-card-actions > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .furnishing-results-head,
+  .furnishing-price-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .furnishing-hero h2 {
+    font-size: 21px;
+  }
+}
