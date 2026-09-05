@@ -1,0 +1,139 @@
+/**
+ * Structural shell contract.
+ * Loaded last so navigation, header and content geometry stay uniform across
+ * beneficiary pages regardless of older page-specific prototype styles.
+ */
+
+.app-shell {
+  min-height: 100dvh;
+  align-items: stretch;
+}
+
+.main-content {
+  min-width: 0;
+  min-height: 100dvh;
+}
+
+/* The application header is one stable frame on every internal beneficiary page. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  min-height: 66px;
+  isolation: isolate;
+}
+
+.topbar-brand {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  max-width: min(220px, 42vw);
+  white-space: nowrap;
+}
+
+.topbar-brand strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-bell,
+.profile-chip,
+.menu-toggle {
+  position: relative;
+  z-index: 3;
+}
+
+/* Locked destinations stay visible, so the user understands the flow, but
+ * cannot jump over unfinished prerequisites. */
+.nav-item.nav-item-locked {
+  cursor: not-allowed;
+  opacity: .46;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.nav-item.nav-item-locked:hover {
+  background: transparent;
+  color: rgba(255,255,255,.78);
+}
+
+.nav-lock-icon {
+  margin-inline-start: auto;
+  flex: 0 0 auto;
+  opacity: .86;
+}
+
+/* Desktop sidebar owns the viewport, not the document height. Its navigation
+ * scrolls independently while account controls remain reachable at the bottom. */
+@media (min-width: 761px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .brand-lockup {
+    flex: 0 0 auto;
+  }
+
+  .side-nav {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-inline-end: 2px;
+  }
+
+  .sidebar-bottom {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 12px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
+    background: #0a443c;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    min-height: 60px;
+    padding-inline: 10px;
+  }
+
+  .topbar-brand {
+    max-width: 38vw;
+  }
+
+  .sidebar {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar-bottom {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 520px) {
+  .profile-chip span {
+    display: none;
+  }
+
+  .profile-chip {
+    width: 38px;
+    min-width: 38px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .topbar-brand {
+    max-width: 34vw;
+  }
+}
