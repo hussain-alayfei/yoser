@@ -16,6 +16,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { LoginPage } from "./pages/Login";
 import { OnboardingPage } from "./pages/Onboarding";
 import { JourneyStartPage, HomePage, ProfilePage, ProgramsPage, ApplicationPage, RequirementsPage, NotificationsPage, UnitPage, MaintenancePage, MaintenanceDetailPage, NewMaintenancePage } from "./pages/BeneficiaryPages";
+import { DigitalTwinStudioPage } from "./pages/DigitalTwinStudio";
 import { StaffPage } from "./pages/Staff";
 import { AssociationCasePage } from "./pages/Association";
 import { AssociationWorkspacePage } from "./pages/AssociationWorkspace";
@@ -33,6 +34,7 @@ function Router() {
     <Route path="/requirements" component={RequirementsPage} />
     <Route path="/notifications" component={NotificationsPage} />
     <Route path="/unit" component={UnitPage} />
+    <Route path="/unit/twin" component={DigitalTwinStudioPage} />
     <Route path="/unit/maintenance" component={MaintenancePage} />
     <Route path="/unit/maintenance/new" component={NewMaintenancePage} />
     <Route path="/unit/maintenance/:id" component={MaintenanceDetailPage} />
