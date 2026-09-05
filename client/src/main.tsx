@@ -16,13 +16,17 @@ import "./product-polish.css";
 import "./responsive.css";
 // iPhone/mobile finishing layer keeps tab bars, safe areas and touch targets stable.
 import "./mobile-ios.css";
-// Final journey pass: clear process steps, one primary action, quiet AI markers.
+// Legacy journey layers remain for backwards compatibility; the official
+// service UX layer loaded last below owns the final hierarchy and spacing.
 import "./journey-v2.css";
 import "./journey-cleanup.css";
-// Dedicated WebGL digital-twin workspace styles are tightly scoped and load last.
+// Dedicated WebGL digital-twin workspace styles are tightly scoped.
 import "./digital-twin-3d.css";
 import "./digital-twin-loading.css";
 import "./digital-twin-studio.css";
+// Final transaction/service layer: one clear journey, one dominant action,
+// predictable spacing, and no overlapping fixed controls.
+import "./official-service-ux.css";
 
 const queryClient = new QueryClient();
 
