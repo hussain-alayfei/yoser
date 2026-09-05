@@ -7,7 +7,7 @@
 import { Armchair, ArrowRight, Bell, Building2, CheckCircle2, ClipboardList, Clock3, Compass, Home, LockKeyhole, LogOut, Menu, ShieldAlert, UserRound, UsersRound } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { getApplicationCreated, getHandoverComplete, getJourneyStep, getUnitReady } from "@/journeyExperience";
+import { getApplicationCreated, getJourneyStep } from "@/journeyExperience";
 import { JourneyContinuation, JourneyNavigator } from "./JourneyNavigator";
 
 const logo = "/brand/yusr-logo.svg";
@@ -100,8 +100,6 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
   useEffect(() => { setOpen(false); }, [location]);
 
   const hasApplication = getApplicationCreated();
-  const unitReady = getUnitReady();
-  const handoverComplete = getHandoverComplete();
   const hasProfile = (() => { try { return Boolean(sessionStorage.getItem("sakan-profile")); } catch { return false; } })();
   const selectedProgram = (() => { try { return sessionStorage.getItem("yusr-selected-program") ?? ""; } catch { return ""; } })();
   const currentJourneyStep = journeyStep ?? getJourneyStep(location, hasApplication);
@@ -122,16 +120,6 @@ export function AppShell({ children, eyebrow, title, subtitle, actions, variant 
       ...item,
       locked: !hasApplication,
       lockReason: "تتاح المتطلبات بعد إكمال البيانات واختيار البرنامج وتقديم الطلب.",
-    };
-    if (item.href === "/unit") return {
-      ...item,
-      locked: !unitReady,
-      lockReason: "يفتح المسكن عند اكتمال مراجعة الطلب وتخصيص الوحدة من الجهة المختصة.",
-    };
-    if (item.href === "/unit/furnishing") return {
-      ...item,
-      locked: !handoverComplete,
-      lockReason: "يفتح التأثيث بعد اكتمال الاستلام وتأكيد جاهزية الوحدة.",
     };
     return item;
   });
