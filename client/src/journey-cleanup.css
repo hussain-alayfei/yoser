@@ -1,0 +1,43 @@
+/* Final journey cleanup: no decorative AI cues, deterministic content order. */
+
+/* Keep flex ordering stable if a future direct child is added to these pages. */
+.page-body:has(.connected-home-hero) > * { order: 4; }
+.page-body:has(.connected-home-hero) > .unified-next-action { order: 1; }
+.page-body:has(.connected-home-hero) > .connected-home-hero { order: 2; }
+.page-body:has(.connected-home-hero) > .metrics-section { order: 3; }
+.page-body:has(.connected-home-hero) > .home-layout { order: 4; }
+
+.page-body:has(.program-list) > * { order: 4; }
+.page-body:has(.program-list) > .program-choice-head { order: 1; }
+.page-body:has(.program-list) > .ai-decision-notice { order: 2; }
+.page-body:has(.program-list) > .unified-next-action { order: 3; }
+.page-body:has(.program-list) > .program-list { order: 4; }
+.page-body:has(.program-list) > .prototype-note-wrap { order: 5; }
+
+/* The old sparkle/orbit was a decorative AI trope; the journey copy already
+   explains what happens next, so removing it improves signal-to-noise. */
+.journey-start-result .result-orbit {
+  display: none !important;
+}
+
+/* Avoid pulse/glow treatments in the beneficiary journey. */
+.journey-navigator *,
+.unified-next-action *,
+.ai-badge,
+.journey-start-result * {
+  text-shadow: none !important;
+}
+
+.journey-navigator,
+.unified-next-action,
+.journey-start-result,
+.ai-decision-notice {
+  background-image: none !important;
+  filter: none !important;
+}
+
+/* AI assistance is provenance, not a visual theme. */
+.journey-ai-mark,
+.ai-badge {
+  animation: none !important;
+}
